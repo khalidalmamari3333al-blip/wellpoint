@@ -243,3 +243,19 @@ Object.assign(STRINGS.zh, {
   alarm_denied: "此处已阻止通知。Wellpoint 打开时闹钟仍会响铃，你也可以将其添加到时钟。", alarm_ringing: "持续响铃，直到你响应",
   alarm_os_note: "闹钟会持续响铃和振动，直到你选择一个选项。网页只有在打开时才能响铃；添加到手机时钟即可随时响铃。"
 });
+Object.assign(STRINGS.zh, {
+  tree_thirsty: "你的小树有点渴了", tree_thirsty_d: "只需一小步，它就会重新焕发生机。",
+  tree_growing: "你的小树正在成长", tree_growing_d: "每一杯水、每一次服药都在帮助它成长。",
+  tree_bloom: "你的小树枝繁叶茂", tree_bloom_d: "你今天把自己照顾得很好。",
+  water_count: "今天已喝 {n}/{g} 杯水",
+  next_step_now: "你现在的下一步",
+  ns_dose: "现在服用 {med}", ns_water: "喝第 {n} 杯水", ns_walk: "轻松散步 10 分钟", ns_breath: "做一分钟深呼吸", ns_winddown: "放下屏幕，准备睡觉", ns_rest: "今天都完成了，好好休息",
+  cd_due: "该服药了", cd_next: "距下次服药", cd_next_tomorrow: "距明天服药", cd_now: "现在", cd_hm: "{h}小时{m}分", cd_ms: "{m}:{s}",
+  course_left: "{med}：疗程还剩 {d} 天",
+  streak_days: "已连续 {n} 天", streak_start: "今天开始你的连续记录", streak_today_done: "今天已计入 ✓", streak_keep: "今天一小步就能继续", streak_first: "任何一小步都算数",
+  shield_ready: "休息日护盾已就绪：每周错过一天不会中断记录", shield_used: "本周已使用护盾",
+  water_logged: "已记录一杯水 · {n}/{g}", water_goal_done: "今天的喝水目标达成！", walk_logged: "已记录散步，做得好", winddown_logged: "晚安，好好休息", breath_logged: "完成一分钟平静呼吸",
+  gift_title: "给你的小惊喜", gift_d: "点击礼物打开", gift_open: "打开", gift_tip_title: "今日秘密小贴士", gift_tip_note: "一般健康建议，并非医疗建议。", gift_thanks: "谢谢！",
+  breath_title: "一分钟呼吸", breath_d: "跟随圆圈：变大时吸气，变小时呼气。", breath_in: "吸气", breath_out: "呼气", breath_done: "完成",
+  tip_1: "把水瓶放在看得见的地方，你会不知不觉喝得更多。", tip_2: "把服药和每天的习惯绑定，比如早上的咖啡。", tip_3: "饭后散步 10 分钟有助消化和精力。", tip_4: "早晨晒太阳有助于晚上睡得更好。", tip_5: "慢慢呼吸一分钟能帮助你平静下来。", tip_6: "周末也保持固定的睡觉时间。", tip_7: "每小时起身伸展一分钟。", tip_8: "起床后喝一杯水是很好的开始。", tip_9: "想到要问医生的问题就立刻记下来。", tip_10: "今天对别人微笑，对你们都有好处。"
+});

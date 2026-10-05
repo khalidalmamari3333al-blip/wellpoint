@@ -40,6 +40,7 @@
   --fs-xl: 1.5rem;
   --fs-2xl: 2rem;
   --ease: cubic-bezier(.16, 1, .3, 1);
+  --mint: #4FBF9F; --mint-soft: #E2F5EE; --sky: #5AB0E0; --sky-soft: #E3F2FB; --sun: #F08A3C; --sun-ink: #FFFFFF; --leaf: #3FAE84; --leaf-2: #7DD3AE; --bark: #8A6A52;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -51,6 +52,8 @@
     --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
     --shadow-lift: 0 2px 4px rgba(0,0,0,.4), 0 18px 40px -16px rgba(0,0,0,.75);
     --scrim: rgba(3, 6, 12, .66);
+  --mint: #5FD0AE; --mint-soft: #12291F; --sky: #74C0EA; --sky-soft: #10222F; --sun: #F49A55; --sun-ink: #1A0F06; --leaf: #4CC294; --leaf-2: #2E8A66; --bark: #A9876C;
+    --mint: #5FD0AE; --mint-soft: #12291F; --sky: #74C0EA; --sky-soft: #10222F; --sun: #F49A55; --sun-ink: #1A0F06; --leaf: #4CC294; --leaf-2: #2E8A66; --bark: #A9876C;
     color-scheme: dark;
   }
 }
@@ -63,6 +66,7 @@
   --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
   --shadow-lift: 0 2px 4px rgba(0,0,0,.4), 0 18px 40px -16px rgba(0,0,0,.75);
   --scrim: rgba(3, 6, 12, .66);
+  --mint: #5FD0AE; --mint-soft: #12291F; --sky: #74C0EA; --sky-soft: #10222F; --sun: #F49A55; --sun-ink: #1A0F06; --leaf: #4CC294; --leaf-2: #2E8A66; --bark: #A9876C;
   color-scheme: dark;
 }
 :root[data-size="large"] { font-size: 112.5%; }
@@ -467,6 +471,53 @@ html { scroll-padding-top: 76px; }
 @keyframes bell-shake { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(14deg); } 30% { transform: rotate(-12deg); } 45% { transform: rotate(8deg); } 60% { transform: rotate(-5deg); } 75% { transform: rotate(2deg); } }
 .alarm-bell .ico { animation: bell-shake 1.3s var(--ease) infinite; transform-origin: 50% 10%; }
 @media (prefers-reduced-motion: reduce) { .ringing, .alarm-bell .ico { animation: none; } }
+
+/* ---------- calm-engagement home (tree, next step, countdown, streak) ---------- */
+.tree-card { background: linear-gradient(165deg, var(--mint-soft), var(--sky-soft)); border-color: transparent; display: grid; gap: 6px; padding: 18px 22px 22px; }
+.tree { width: min(230px, 70%); height: auto; margin: 0 auto; display: block; overflow: visible; }
+.tree .soil { fill: color-mix(in srgb, var(--bark) 22%, transparent); }
+.tree .trunk { fill: none; stroke: var(--bark); stroke-width: 7; stroke-linecap: round; }
+.tree .leaf { fill: var(--leaf); opacity: .9; transform-box: fill-box; transform-origin: center; transition: fill .6s, opacity .6s; }
+.tree .leaf:nth-child(2n) { fill: var(--leaf-2); }
+.tree .fruit { fill: var(--sun); }
+.tree.thirsty .leaf { fill: color-mix(in srgb, var(--leaf) 45%, #C9B98A); opacity: .75; }
+.tree.thirsty .leaf:nth-child(2n) { fill: color-mix(in srgb, var(--leaf-2) 45%, #D8CDA0); }
+.tree.bloom .crown { filter: drop-shadow(0 6px 10px color-mix(in srgb, var(--leaf) 35%, transparent)); }
+.drops { display: flex; gap: 6px; justify-content: center; margin-top: 4px; }
+.drops span { width: 10px; height: 14px; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: color-mix(in srgb, var(--sky) 22%, transparent); }
+.drops span.on { background: var(--sky); }
+.magic-btn { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 76px; padding: 14px 18px; border: 0; border-radius: var(--r-lg); background: var(--sun); color: var(--sun-ink); box-shadow: 0 14px 30px -16px color-mix(in srgb, var(--sun) 80%, transparent); font: inherit; cursor: pointer; transition: transform .15s var(--ease); }
+.magic-btn b { display: block; font-size: var(--fs-lg); line-height: 1.3; }
+.magic-btn .eyebrow { color: inherit; opacity: .85; }
+.magic-btn:active { transform: scale(.97); }
+.magic-btn.calm { background: var(--mint-soft); color: var(--ink); box-shadow: none; cursor: default; }
+.magic-ico { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, #fff 24%, transparent); flex: none; }
+.btn.warm { background: var(--sun); color: var(--sun-ink); }
+.cd-card { display: flex; align-items: center; gap: 14px; text-align: start; }
+.cd-val { font-family: var(--font-data); font-variant-numeric: tabular-nums; font-size: var(--fs-lg); color: var(--mint); background: var(--mint-soft); padding: 8px 12px; border-radius: 12px; white-space: nowrap; }
+.cd-val.late { color: var(--sun); background: color-mix(in srgb, var(--sun) 14%, transparent); }
+.streak { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); }
+.streak .flame { font-size: 1.6rem; }
+.streak .shield { opacity: .3; font-size: 1.2rem; }
+.streak .shield.on { opacity: 1; }
+.gift-box { font-size: 4.5rem; background: none; border: 0; cursor: pointer; margin: 6px auto; line-height: 1; }
+.gift-open { font-size: 3rem; }
+.breath-wrap { position: relative; height: 200px; display: grid; place-items: center; }
+.breath-orb { width: 90px; height: 90px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, var(--sky), var(--mint)); opacity: .85; }
+.breath-label { position: absolute; font-weight: 650; color: var(--ink); }
+.confetti { position: fixed; inset: 0; pointer-events: none; z-index: 90; overflow: hidden; }
+.confetti i { position: absolute; top: 38%; width: 8px; height: 12px; border-radius: 2px; animation: conf var(--d) cubic-bezier(.2, .7, .3, 1) forwards; }
+@keyframes conf { 0% { transform: translate(0, 0) rotate(0); opacity: 1; } 100% { transform: translate(var(--x), 60vh) rotate(var(--r)); opacity: 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  .tree .leaf { animation: sway 5s ease-in-out infinite; }
+  .gift-box { animation: wiggle 1.6s ease-in-out infinite; }
+  .breath-orb { animation: breathe 8s ease-in-out infinite; }
+  .streak .flame { animation: flick 2.4s ease-in-out infinite; }
+}
+@keyframes sway { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(1.5px, -1px) scale(1.04); } }
+@keyframes wiggle { 0%, 70%, 100% { transform: rotate(0); } 75% { transform: rotate(-8deg); } 85% { transform: rotate(8deg); } }
+@keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.9); } }
+@keyframes flick { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
 </style>
 <div id="app"><div style="padding:40px 16px;text-align:center;font-family:system-ui">Loading Wellpoint…</div></div><div id="layer"></div><div id="toasts" class="toast-wrap" aria-live="polite"></div>
 <script>
@@ -861,6 +912,22 @@ Object.assign(STRINGS.en, {
   alarm_denied: "Notifications are blocked here. The alarm still rings while Wellpoint is open, and you can add it to your Clock.", alarm_ringing: "Ringing until you respond",
   alarm_os_note: "The alarm keeps ringing and vibrating until you choose an option. A website can only ring while it's open; add the alarm to your Clock to ring anytime."
 });
+Object.assign(STRINGS.en, {
+  tree_thirsty: "Your tree is a little thirsty", tree_thirsty_d: "One small step is all it needs to perk up again.",
+  tree_growing: "Your tree is growing", tree_growing_d: "Every glass of water and every dose helps it grow.",
+  tree_bloom: "Your tree is flourishing", tree_bloom_d: "You're looking after yourself beautifully today.",
+  water_count: "{n} of {g} glasses of water today",
+  next_step_now: "Your next step now",
+  ns_dose: "Take your {med} now", ns_water: "Drink glass number {n} of water", ns_walk: "A gentle 10-minute walk", ns_breath: "One minute of deep breathing", ns_winddown: "Put the screen down and get ready for sleep", ns_rest: "You're all done. Enjoy your rest",
+  cd_due: "Your dose is due", cd_next: "Next dose in", cd_next_tomorrow: "Next dose tomorrow in", cd_now: "Now", cd_hm: "{h}h {m}m", cd_ms: "{m}:{s}",
+  course_left: "{med}: {d} days left in the course",
+  streak_days: "{n} days in a row", streak_start: "Start your streak today", streak_today_done: "Today counts ✓", streak_keep: "One small step today keeps it going", streak_first: "Any small step counts",
+  shield_ready: "Rest-day shield ready: one missed day a week won't break your streak", shield_used: "Shield used this week",
+  water_logged: "Glass logged · {n}/{g}", water_goal_done: "Water goal reached for today!", walk_logged: "Walk logged. Nicely done", winddown_logged: "Good night. Rest well", breath_logged: "One calm minute done",
+  gift_title: "A little surprise for you", gift_d: "Tap the gift to open it", gift_open: "Open", gift_tip_title: "Today's secret tip", gift_tip_note: "General wellness tip, not medical advice.", gift_thanks: "Thanks!",
+  breath_title: "One minute of breathing", breath_d: "Follow the circle: breathe in as it grows, out as it shrinks.", breath_in: "Breathe in", breath_out: "Breathe out", breath_done: "Done",
+  tip_1: "Keep a water bottle where you can see it. You'll drink more without thinking.", tip_2: "Pair your medication with a daily habit, like your morning coffee.", tip_3: "A 10-minute walk after a meal is good for digestion and energy.", tip_4: "Sunlight in the morning helps you sleep better at night.", tip_5: "Slow breathing for one minute can help you feel calmer.", tip_6: "Keep the same bedtime, even on weekends.", tip_7: "Stand up and stretch for a minute every hour.", tip_8: "A glass of water when you wake up is a great start.", tip_9: "Write down questions for your doctor as soon as you think of them.", tip_10: "Smiling at someone today is good for both of you."
+});
 
 /* العربية */
 STRINGS.ar = {
@@ -1107,6 +1174,22 @@ Object.assign(STRINGS.ar, {
   alarm_denied: "الإشعارات محظورة هنا. يبقى المنبّه يرن ما دام Wellpoint مفتوحًا، ويمكنك إضافته إلى الساعة.", alarm_ringing: "يرن حتى تستجيب",
   alarm_os_note: "يستمر المنبّه بالرنين والاهتزاز حتى تختار أحد الخيارات. الموقع يرن فقط وهو مفتوح؛ أضف المنبّه إلى ساعة هاتفك ليرن في أي وقت."
 });
+Object.assign(STRINGS.ar, {
+  tree_thirsty: "شجرتك عطشانة قليلًا", tree_thirsty_d: "خطوة صغيرة واحدة تكفي لتنتعش من جديد.",
+  tree_growing: "شجرتك تنمو", tree_growing_d: "كل كوب ماء وكل جرعة دواء تساعدها على النمو.",
+  tree_bloom: "شجرتك مزدهرة", tree_bloom_d: "أنت تهتم بنفسك بشكل رائع اليوم.",
+  water_count: "{n} من {g} أكواب ماء اليوم",
+  next_step_now: "خطوتك القادمة الآن",
+  ns_dose: "خذ دواء {med} الآن", ns_water: "اشرب كوب الماء رقم {n}", ns_walk: "مشي هادئ لمدة 10 دقائق", ns_breath: "خذ دقيقة تنفس عميق الآن", ns_winddown: "ابتعد عن الشاشة واستعد للنوم", ns_rest: "أنجزت كل شيء، استمتع بوقتك",
+  cd_due: "حان موعد جرعتك", cd_next: "الجرعة القادمة بعد", cd_next_tomorrow: "الجرعة القادمة غدًا بعد", cd_now: "الآن", cd_hm: "{h}س {m}د", cd_ms: "{m}:{s}",
+  course_left: "{med}: باقي {d} يوم على انتهاء العلاج",
+  streak_days: "أنت بطل منذ {n} أيام", streak_start: "ابدأ سلسلتك اليوم", streak_today_done: "يومك محسوب ✓", streak_keep: "خطوة صغيرة اليوم تكفي لتستمر", streak_first: "أي خطوة صغيرة تُحسب",
+  shield_ready: "درع يوم الراحة جاهز: يوم واحد فائت في الأسبوع لن يكسر سلسلتك", shield_used: "استُخدم الدرع هذا الأسبوع",
+  water_logged: "سُجّل كوب الماء · {n}/{g}", water_goal_done: "حققت هدف الماء اليوم!", walk_logged: "سُجّل المشي، أحسنت", winddown_logged: "تصبح على خير، نومًا هنيئًا", breath_logged: "أتممت دقيقة هدوء",
+  gift_title: "مفاجأة صغيرة لك", gift_d: "اضغط على الهدية لفتحها", gift_open: "افتح", gift_tip_title: "نصيحة اليوم السرية", gift_tip_note: "نصيحة عافية عامة وليست استشارة طبية.", gift_thanks: "شكرًا!",
+  breath_title: "دقيقة تنفس", breath_d: "تابع الدائرة: شهيق وهي تكبر، وزفير وهي تصغر.", breath_in: "شهيق", breath_out: "زفير", breath_done: "تم",
+  tip_1: "ضع قارورة الماء أمام عينيك، ستشرب أكثر دون أن تفكر.", tip_2: "اربط موعد دوائك بعادة يومية مثل قهوة الصباح.", tip_3: "المشي 10 دقائق بعد الأكل مفيد للهضم والطاقة.", tip_4: "ضوء الشمس صباحًا يساعدك على نوم أفضل ليلًا.", tip_5: "التنفس البطيء لدقيقة واحدة قد يساعدك على الشعور بالهدوء.", tip_6: "حافظ على موعد نوم ثابت حتى في الإجازات.", tip_7: "قف وتمدد دقيقة كل ساعة.", tip_8: "كوب ماء عند الاستيقاظ بداية رائعة ليومك.", tip_9: "دوّن أسئلتك للطبيب فور أن تخطر ببالك.", tip_10: "ابتسامتك لشخص اليوم مفيدة لكما معًا."
+});
 
 /* 简体中文 */
 STRINGS.zh = {
@@ -1352,6 +1435,22 @@ Object.assign(STRINGS.zh, {
   alarm_settings: "闹钟设置", alarm_sound: "闹钟铃声", alarm_vibrate: "振动", alarm_enable: "允许闹钟通知", alarm_enabled: "闹钟通知已开启。",
   alarm_denied: "此处已阻止通知。Wellpoint 打开时闹钟仍会响铃，你也可以将其添加到时钟。", alarm_ringing: "持续响铃，直到你响应",
   alarm_os_note: "闹钟会持续响铃和振动，直到你选择一个选项。网页只有在打开时才能响铃；添加到手机时钟即可随时响铃。"
+});
+Object.assign(STRINGS.zh, {
+  tree_thirsty: "你的小树有点渴了", tree_thirsty_d: "只需一小步，它就会重新焕发生机。",
+  tree_growing: "你的小树正在成长", tree_growing_d: "每一杯水、每一次服药都在帮助它成长。",
+  tree_bloom: "你的小树枝繁叶茂", tree_bloom_d: "你今天把自己照顾得很好。",
+  water_count: "今天已喝 {n}/{g} 杯水",
+  next_step_now: "你现在的下一步",
+  ns_dose: "现在服用 {med}", ns_water: "喝第 {n} 杯水", ns_walk: "轻松散步 10 分钟", ns_breath: "做一分钟深呼吸", ns_winddown: "放下屏幕，准备睡觉", ns_rest: "今天都完成了，好好休息",
+  cd_due: "该服药了", cd_next: "距下次服药", cd_next_tomorrow: "距明天服药", cd_now: "现在", cd_hm: "{h}小时{m}分", cd_ms: "{m}:{s}",
+  course_left: "{med}：疗程还剩 {d} 天",
+  streak_days: "已连续 {n} 天", streak_start: "今天开始你的连续记录", streak_today_done: "今天已计入 ✓", streak_keep: "今天一小步就能继续", streak_first: "任何一小步都算数",
+  shield_ready: "休息日护盾已就绪：每周错过一天不会中断记录", shield_used: "本周已使用护盾",
+  water_logged: "已记录一杯水 · {n}/{g}", water_goal_done: "今天的喝水目标达成！", walk_logged: "已记录散步，做得好", winddown_logged: "晚安，好好休息", breath_logged: "完成一分钟平静呼吸",
+  gift_title: "给你的小惊喜", gift_d: "点击礼物打开", gift_open: "打开", gift_tip_title: "今日秘密小贴士", gift_tip_note: "一般健康建议，并非医疗建议。", gift_thanks: "谢谢！",
+  breath_title: "一分钟呼吸", breath_d: "跟随圆圈：变大时吸气，变小时呼气。", breath_in: "吸气", breath_out: "呼气", breath_done: "完成",
+  tip_1: "把水瓶放在看得见的地方，你会不知不觉喝得更多。", tip_2: "把服药和每天的习惯绑定，比如早上的咖啡。", tip_3: "饭后散步 10 分钟有助消化和精力。", tip_4: "早晨晒太阳有助于晚上睡得更好。", tip_5: "慢慢呼吸一分钟能帮助你平静下来。", tip_6: "周末也保持固定的睡觉时间。", tip_7: "每小时起身伸展一分钟。", tip_8: "起床后喝一杯水是很好的开始。", tip_9: "想到要问医生的问题就立刻记下来。", tip_10: "今天对别人微笑，对你们都有好处。"
 });
 
 /* ============================================================
@@ -2110,6 +2209,7 @@ const ICONS = {
   pin: '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 1 1 13 0c0 5.4-6.5 11-6.5 11Z"/><circle cx="12" cy="10" r="2.3"/>',
   phone: '<path d="M6.5 3.5h3l1.5 4-2 1.3a10.5 10.5 0 0 0 6.2 6.2l1.3-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.7a2 2 0 0 1 2-2.2Z"/>',
   globe: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 3.5 5.5 3.5 8.5s-1 5.9-3.5 8.5c-2.5-2.6-3.5-5.5-3.5-8.5s1-5.9 3.5-8.5Z"/>',
+  drop: '<path d="M12 3.5s6 6.4 6 10.8a6 6 0 0 1-12 0C6 9.9 12 3.5 12 3.5Z"/>',
   moon: '<path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10Z"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/>',
   shield: '<path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.2 7.5 9.5 4.4-1.3 7.5-4.9 7.5-9.5V6Z"/><path d="m9 12 2 2 4-4"/>',
@@ -2544,6 +2644,7 @@ function homeView() {
     <div class="hero-greet stack-sm"><span class="small muted">${esc(fmtDate(today(), { weekday: "long", day: "numeric", month: "long" }))}</span><h1>${esc(t(greetingKey(), { name }))}</h1></div>
     ${caregiverBanner()}
     ${isCaregiver() ? caregiverHomeExtra(pid) : moodBlock}
+    ${isCaregiver() ? "" : wellbeingHero(pid)}
     <span class="eyebrow">${esc(t("today_overview"))}</span>
     ${order.filter(Boolean).join("")}
   </div>`, { tab: "home" });
@@ -3288,6 +3389,182 @@ const PATIENT_VIEWS = {
 };
 
 /* ============================================================
+   Calm-engagement layer for the patient home (experimental)
+   - Health tree: grows with today's care actions, never punishes;
+     a neglected tree looks "thirsty" and recovers on the next action.
+   - Next step now: one clear action chosen by time of day.
+   - Medication countdown: live time until the next dose.
+   - Streak with a weekly rest-day shield.
+   - Celebration: haptic tap, confetti, occasional surprise tip.
+   ============================================================ */
+const WATER_GOAL = 8;
+const TIP_COUNT = 10;
+const habitsFor = (pid, date = today()) => (DB.habits || []).filter((h) => h.patientId === pid && h.date === date);
+const waterToday = (pid) => habitsFor(pid).filter((h) => h.kind === "water").length;
+
+function logHabit(kind) {
+  const pid = PID(); if (!pid || isCaregiver()) return;
+  (DB.habits ||= []).push({ id: uid("hb"), patientId: pid, date: today(), kind, at: new Date().toISOString() });
+  saveDB();
+}
+function activeOn(pid, date) {
+  if ((DB.habits || []).some((h) => h.patientId === pid && h.date === date)) return true;
+  if (DB.doseLog.some((d) => d.patientId === pid && d.date === date && d.status === "taken")) return true;
+  return DB.checkins.some((c) => c.patientId === pid && c.at.slice(0, 10) === date);
+}
+/* Consecutive active days. One missed day per 7 is covered by a rest-day shield,
+   so a single sick day never wipes out a long streak. */
+function streakInfo(pid) {
+  let n = 0, shieldUsed = null, d = activeOn(pid, today()) ? today() : addDays(today(), -1);
+  for (let i = 0; i < 365; i++) {
+    if (activeOn(pid, d)) n++;
+    else if (n > 0 && (!shieldUsed || daysBetween(d, shieldUsed) >= 7) && activeOn(pid, addDays(d, -1))) shieldUsed = d;
+    else break;
+    d = addDays(d, -1);
+  }
+  return { n, shieldUsed, shieldReady: !shieldUsed || daysBetween(shieldUsed, today()) >= 7, today: activeOn(pid, today()) };
+}
+function treeScore(pid) {
+  const sched = scheduleFor(pid); const taken = sched.filter((i) => i.status === "taken").length;
+  const meds = sched.length ? taken / sched.length : 1;
+  const water = Math.min(1, waterToday(pid) / WATER_GOAL);
+  const other = habitsFor(pid).some((h) => h.kind !== "water") || DB.checkins.some((c) => c.patientId === pid && c.at.slice(0, 10) === today()) ? 1 : 0;
+  return Math.round((water * 0.4 + meds * 0.35 + other * 0.25) * 100);
+}
+function treeSvg(score, streak) {
+  const stage = score < 30 ? "thirsty" : score < 70 ? "growing" : "bloom";
+  const leaves = 4 + Math.round(score / 7);
+  const spots = [[100, 52], [78, 62], [122, 62], [64, 82], [136, 82], [88, 74], [112, 74], [100, 70], [72, 100], [128, 100], [92, 92], [108, 92], [56, 104], [144, 104], [100, 88], [82, 46], [118, 46], [100, 34]];
+  const fruit = Math.min(streak, 5);
+  const fruitSpots = [[86, 66], [116, 84], [96, 98], [126, 66], [74, 90]];
+  const leaf = (x, y, i) => `<circle class="leaf" cx="${x}" cy="${y}" r="${13 + (i % 3) * 2}" style="animation-delay:${(i % 6) * 0.18}s"/>`;
+  return `<svg class="tree ${stage}" viewBox="0 0 200 170" role="img" aria-label="${esc(t("tree_" + stage))}">
+    <ellipse cx="100" cy="158" rx="58" ry="7" class="soil"/>
+    <path class="trunk" d="M100 158c-2-18-3-34 0-52M100 120c-8-6-16-10-26-12M100 112c9-7 18-10 28-11"/>
+    <g class="crown">${spots.slice(0, leaves).map(([x, y], i) => leaf(x, y, i)).join("")}
+    ${fruitSpots.slice(0, fruit).map(([x, y]) => `<circle class="fruit" cx="${x}" cy="${y}" r="4.5"/>`).join("")}</g>
+  </svg>`;
+}
+function nextDose(pid) {
+  const now = new Date();
+  const at = (date, hm) => new Date(`${date}T${hm}:00`);
+  const due = scheduleFor(pid).filter((i) => i.status === "due");
+  const late = due.find((i) => at(today(), i.time) <= now);
+  if (late) return { item: late, ts: at(today(), late.time).getTime(), late: true };
+  const up = due.find((i) => at(today(), i.time) > now);
+  if (up) return { item: up, ts: at(today(), up.time).getTime() };
+  const tmr = addDays(today(), 1); const first = scheduleFor(pid, tmr)[0];
+  return first ? { item: first, ts: at(tmr, first.time).getTime(), tomorrow: true } : null;
+}
+function fmtCountdown(ts) {
+  const s = Math.max(0, Math.floor((ts - Date.now()) / 1000));
+  if (s < 60) return t("cd_now");
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  return h ? t("cd_hm", { h: fmtNum(h), m: fmtNum(m) }) : t("cd_ms", { m: fmtNum(m), s: fmtNum(sec).padStart(2, fmtNum(0)) });
+}
+function courseLeft(m) { return m.end ? Math.max(0, daysBetween(today(), m.end)) : null; }
+
+/* One clear action, chosen by the hour; a due dose always wins. */
+function nextStep(pid) {
+  const nd = allow("meds") ? nextDose(pid) : null;
+  if (nd && !nd.tomorrow && nd.ts - Date.now() < 30 * 60000) return { key: "ns_dose", p: { med: nd.item.med.name }, act: "dose", data: `data-med="${nd.item.med.id}" data-time="${nd.item.time}" data-s="taken"`, ic: "pill" };
+  const h = new Date().getHours(); const done = new Set(habitsFor(pid).map((x) => x.kind));
+  const water = waterToday(pid), expected = Math.max(1, Math.round(((h - 7) / 15) * WATER_GOAL));
+  if (water < WATER_GOAL && (water < expected || h < 11)) return { key: "ns_water", p: { n: fmtNum(water + 1) }, act: "habit-water", ic: "drop" };
+  if (h >= 11 && h < 14 && !done.has("walk")) return { key: "ns_walk", act: "habit-walk", ic: "activity" };
+  if (h >= 14 && h < 19 && !done.has("breath")) return { key: "ns_breath", act: "breath-open", ic: "sparkle" };
+  if (h >= 21 && !done.has("winddown")) return { key: "ns_winddown", act: "habit-winddown", ic: "moon" };
+  if (!done.has("breath")) return { key: "ns_breath", act: "breath-open", ic: "sparkle" };
+  if (water < WATER_GOAL) return { key: "ns_water", p: { n: fmtNum(water + 1) }, act: "habit-water", ic: "drop" };
+  return { key: "ns_rest", act: "noop", ic: "heart", calm: true };
+}
+
+function wellbeingHero(pid) {
+  const score = treeScore(pid); const st = streakInfo(pid); const step = nextStep(pid);
+  const stage = score < 30 ? "thirsty" : score < 70 ? "growing" : "bloom";
+  const water = waterToday(pid);
+  const nd = allow("meds") ? nextDose(pid) : null;
+  const meds = DB.medications.filter((m) => m.patientId === pid && m.active);
+  const tree = `<section class="card tree-card reveal">
+    ${treeSvg(score, st.n)}
+    <div class="stack-sm" style="text-align:center">
+      <h3>${esc(t("tree_" + stage))}</h3>
+      <p class="small muted">${esc(t("tree_" + stage + "_d"))}</p>
+      <div class="drops" aria-label="${esc(t("water_count", { n: fmtNum(water), g: fmtNum(WATER_GOAL) }))}">${Array.from({ length: WATER_GOAL }, (_, i) => `<span class="${i < water ? "on" : ""}"></span>`).join("")}</div>
+    </div>
+  </section>`;
+  const magic = `<button class="magic-btn ${step.calm ? "calm" : ""}" data-act="${step.act}" ${step.data || ""}>
+    <span class="magic-ico">${icon(step.ic)}</span>
+    <span class="grow" style="text-align:start"><span class="eyebrow">${esc(t("next_step_now"))}</span><b>${esc(t(step.key, step.p))}</b></span>
+    ${step.calm ? "" : flipIcon("chevron", "ico-sm")}
+  </button>`;
+  const countdown = nd ? `<button class="card tap cd-card reveal" data-go="meds">
+    <div class="iconwrap">${icon("pill")}</div>
+    <div class="grow"><span class="eyebrow">${esc(t(nd.late ? "cd_due" : nd.tomorrow ? "cd_next_tomorrow" : "cd_next"))}</span>
+      <h3>${esc(nd.item.med.name)} <span class="small muted">· ${esc(fmtTime(nd.item.time))}</span></h3>
+      ${meds.filter((m) => courseLeft(m) != null).slice(0, 2).map((m) => `<p class="xs faint">${esc(t("course_left", { med: m.name, d: fmtNum(courseLeft(m)) }))}</p>`).join("")}</div>
+    <div class="cd-val ${nd.late ? "late" : ""}" data-countdown="${nd.ts}" aria-live="off">${esc(nd.late ? t("cd_now") : fmtCountdown(nd.ts))}</div>
+  </button>` : "";
+  const streak = `<section class="streak reveal">
+    <span class="flame" aria-hidden="true">🔥</span>
+    <div class="grow"><b>${esc(st.n ? t("streak_days", { n: fmtNum(st.n) }) : t("streak_start"))}</b>
+      <p class="xs muted">${esc(st.today ? t("streak_today_done") : st.n ? t("streak_keep") : t("streak_first"))}</p></div>
+    <span class="shield ${st.shieldReady ? "on" : ""}" title="${esc(t(st.shieldReady ? "shield_ready" : "shield_used"))}">🛡️</span>
+  </section>`;
+  return tree + magic + countdown + streak;
+}
+
+/* ---------- celebration ---------- */
+function haptic(p = 12) { try { if (navigator.vibrate) navigator.vibrate(p); } catch {} }
+function confetti() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const box = document.createElement("div"); box.className = "confetti"; box.setAttribute("aria-hidden", "true");
+  const cols = ["var(--mint)", "var(--sky)", "var(--sun)", "var(--good)"];
+  box.innerHTML = Array.from({ length: 36 }, (_, i) => `<i style="--x:${(Math.random() * 2 - 1) * 46}vw;--r:${Math.random() * 720 - 360}deg;--d:${0.9 + Math.random() * 0.8}s;left:${50 + (Math.random() * 20 - 10)}%;background:${cols[i % 4]}"></i>`).join("");
+  document.body.appendChild(box); setTimeout(() => box.remove(), 1900);
+}
+/* Variable reward: about one in three completions opens a gift with a tip. */
+function celebrate(force) {
+  haptic([10, 40, 14]); confetti();
+  if (force || Math.random() < 0.34) setTimeout(() => { UI.gift = { open: false, tip: Math.floor(Math.random() * TIP_COUNT) + 1 }; openSheet(giftSheet); }, 650);
+}
+function giftSheet() {
+  const g = UI.gift || { open: false, tip: 1 };
+  return `<div class="stack" style="text-align:center;padding:6px 0 4px">
+    ${g.open ? `<div class="gift-open">✨</div><span class="eyebrow">${esc(t("gift_tip_title"))}</span><h3>${esc(t("tip_" + g.tip))}</h3><p class="hint">${esc(t("gift_tip_note"))}</p>
+      <button class="btn block" data-act="sheet-close">${esc(t("gift_thanks"))}</button>`
+    : `<h3>${esc(t("gift_title"))}</h3><p class="muted small">${esc(t("gift_d"))}</p><button class="gift-box" data-act="gift-open" aria-label="${esc(t("gift_open"))}">🎁</button><span class="small muted">${esc(t("gift_open"))}</span>`}
+  </div>`;
+}
+function breathSheet() {
+  return `<div class="stack" style="text-align:center">
+    <h3>${esc(t("breath_title"))}</h3><p class="small muted">${esc(t("breath_d"))}</p>
+    <div class="breath-wrap"><div class="breath-orb"></div><span class="breath-label" id="breath-label">${esc(t("breath_in"))}</span></div>
+    <p class="num muted" id="breath-left">${fmtNum(60)}</p>
+    <button class="btn block warm" data-act="breath-done">${esc(t("breath_done"))}</button>
+  </div>`;
+}
+function startBreath() {
+  clearInterval(UI.breathTimer); let left = 60;
+  UI.breathTimer = setInterval(() => {
+    const lbl = $("#breath-label"), cnt = $("#breath-left");
+    if (!lbl) { clearInterval(UI.breathTimer); return; }
+    left--; cnt.textContent = fmtNum(Math.max(0, left));
+    lbl.textContent = t(Math.floor((60 - left) / 4) % 2 ? "breath_out" : "breath_in");
+    if (left <= 0) { clearInterval(UI.breathTimer); haptic(20); }
+  }, 1000);
+}
+const ACTIONS_EXTRA = {
+  "habit-water": () => { logHabit("water"); const n = waterToday(PID()); toast(t(n >= WATER_GOAL ? "water_goal_done" : "water_logged", { n: fmtNum(n), g: fmtNum(WATER_GOAL) }), "check"); render(); celebrate(n === WATER_GOAL); },
+  "habit-walk": () => { logHabit("walk"); toast(t("walk_logged")); render(); celebrate(); },
+  "habit-winddown": () => { logHabit("winddown"); toast(t("winddown_logged"), "moon"); render(); celebrate(); },
+  "breath-open": () => { haptic(8); openSheet(breathSheet); startBreath(); },
+  "breath-done": () => { clearInterval(UI.breathTimer); closeSheet(); logHabit("breath"); toast(t("breath_logged")); render(); celebrate(); },
+  "gift-open": () => { haptic([8, 30, 8, 30, 20]); UI.gift.open = true; openSheet(giftSheet); },
+};
+setInterval(() => { $$("[data-countdown]").forEach((el) => { if (!el.classList.contains("late")) el.textContent = fmtCountdown(Number(el.dataset.countdown)); }); }, 1000);
+
+/* ============================================================
    Clinic workspace (desktop/tablet first) + platform docs page
    Every query is scoped to App.user.clinicId — clinics never
    see another clinic's patients or appointments.
@@ -3623,7 +3900,7 @@ const ACTIONS = {
     openSheet(() => `<h3>${esc(t("add_calendar"))}</h3><p class="small muted" style="margin:8px 0">${esc(t("ics_fallback"))}</p><pre class="mono" style="white-space:pre-wrap;font-size:11px;background:var(--surface-2);padding:10px;border-radius:12px;max-height:40vh;overflow:auto">${esc(ics)}</pre><button class="btn block" data-act="copy" data-v="${esc(ics)}">${icon("copy", "ico-sm")} ${esc(t("copy"))}</button>`);
   },
   // meds
-  dose: (el) => { try { logDose(el.dataset.med, el.dataset.time, el.dataset.s); toast(t("dose_logged")); render(); } catch (e) { toast(errMsg(e), "alert"); } },
+  dose: (el) => { try { logDose(el.dataset.med, el.dataset.time, el.dataset.s); toast(t("dose_logged")); render(); if (el.dataset.s === "taken" && !isCaregiver()) celebrate(); } catch (e) { toast(errMsg(e), "alert"); } },
   "test-alarm": () => { const it = scheduleFor(PID()).find((i) => i.status !== "taken") || scheduleFor(PID())[0]; if (!it) return; showAlarm({ medId: it.med.id, time: it.time, key: "test" }); },
   "alarm-pref": (el) => { const pr = DB.profiles[App.user.id].prefs; pr[el.dataset.k] = pr[el.dataset.k] === false; saveDB(); render(); },
   "alarm-perm": async () => { if (!("Notification" in window)) { toast(t("alarm_denied"), "info"); return; } try { const r = await Notification.requestPermission(); toast(t(r === "granted" ? "alarm_enabled" : "alarm_denied"), r === "granted" ? "bell" : "info"); } catch { toast(t("alarm_denied"), "info"); } render(); },
@@ -3733,6 +4010,7 @@ const ACTIONS = {
   "c-msg": (el) => { UI.cMsgTo = el.dataset.id; UI.clinicNav = "messages"; render({ scrollTop: true }); },
   "c-staff-toggle": (el) => { try { requirePerm("staff.manage"); const s = DB.staff.find((x) => x.userId === el.dataset.id && x.clinicId === App.user.clinicId); s.active = !s.active; const u = DB.users.find((x) => x.id === s.userId); if (!s.active) DB.sessions.filter((x) => x.userId === u.id).forEach((x) => (x.revoked = true)); audit("au_staff_change", null); saveDB(); render(); } catch (e) { toast(errMsg(e), "alert"); } }
 };
+Object.assign(ACTIONS, ACTIONS_EXTRA);
 const FORMS = {
   async login(form) {
     const id = form.querySelector("#li-id").value, pw = form.querySelector("#li-pw").value;
@@ -3905,6 +4183,7 @@ async function boot() {
   setLang(["en", "ar", "zh"].includes(saved) ? saved : "en");
   DB = loadDB();
   if (!DB || DB.version !== 3) { await seedDB(); saveDB(); }
+  DB.habits ||= [];
   if (api.auth.restore()) { const p = DB.profiles[App.user.id]; if (p?.lang) setLang(p.lang); UI.route = { name: "home", params: {} }; }
   render();
   setInterval(reminderTick, 20000); setTimeout(reminderTick, 1500);

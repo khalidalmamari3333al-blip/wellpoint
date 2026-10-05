@@ -10,7 +10,7 @@ cd "$(dirname "$0")"
   echo '<style>'; cat src/styles.css; echo '</style>'
   echo '<div id="app"><div style="padding:40px 16px;text-align:center;font-family:system-ui">Loading Wellpoint…</div></div><div id="layer"></div><div id="toasts" class="toast-wrap" aria-live="polite"></div>'
   echo '<script>'
-  for f in data i18n-en i18n-ar i18n-zh core ui-base ui-patient ui-clinic events; do cat "src/$f.js"; echo; done
+  for f in data i18n-en i18n-ar i18n-zh core ui-base ui-patient ui-wellbeing ui-clinic events; do cat "src/$f.js"; echo; done
   echo '</script>'
 } > wellpoint.html
 echo "built wellpoint.html ($(wc -c < wellpoint.html) bytes)"

@@ -116,6 +116,7 @@ function homeView() {
     <div class="hero-greet stack-sm"><span class="small muted">${esc(fmtDate(today(), { weekday: "long", day: "numeric", month: "long" }))}</span><h1>${esc(t(greetingKey(), { name }))}</h1></div>
     ${caregiverBanner()}
     ${isCaregiver() ? caregiverHomeExtra(pid) : moodBlock}
+    ${isCaregiver() ? "" : wellbeingHero(pid)}
     <span class="eyebrow">${esc(t("today_overview"))}</span>
     ${order.filter(Boolean).join("")}
   </div>`, { tab: "home" });

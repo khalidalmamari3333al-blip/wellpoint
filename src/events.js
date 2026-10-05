@@ -70,7 +70,7 @@ const ACTIONS = {
     openSheet(() => `<h3>${esc(t("add_calendar"))}</h3><p class="small muted" style="margin:8px 0">${esc(t("ics_fallback"))}</p><pre class="mono" style="white-space:pre-wrap;font-size:11px;background:var(--surface-2);padding:10px;border-radius:12px;max-height:40vh;overflow:auto">${esc(ics)}</pre><button class="btn block" data-act="copy" data-v="${esc(ics)}">${icon("copy", "ico-sm")} ${esc(t("copy"))}</button>`);
   },
   // meds
-  dose: (el) => { try { logDose(el.dataset.med, el.dataset.time, el.dataset.s); toast(t("dose_logged")); render(); } catch (e) { toast(errMsg(e), "alert"); } },
+  dose: (el) => { try { logDose(el.dataset.med, el.dataset.time, el.dataset.s); toast(t("dose_logged")); render(); if (el.dataset.s === "taken" && !isCaregiver()) celebrate(); } catch (e) { toast(errMsg(e), "alert"); } },
   "test-alarm": () => { const it = scheduleFor(PID()).find((i) => i.status !== "taken") || scheduleFor(PID())[0]; if (!it) return; showAlarm({ medId: it.med.id, time: it.time, key: "test" }); },
   "alarm-pref": (el) => { const pr = DB.profiles[App.user.id].prefs; pr[el.dataset.k] = pr[el.dataset.k] === false; saveDB(); render(); },
   "alarm-perm": async () => { if (!("Notification" in window)) { toast(t("alarm_denied"), "info"); return; } try { const r = await Notification.requestPermission(); toast(t(r === "granted" ? "alarm_enabled" : "alarm_denied"), r === "granted" ? "bell" : "info"); } catch { toast(t("alarm_denied"), "info"); } render(); },
@@ -180,6 +180,7 @@ const ACTIONS = {
   "c-msg": (el) => { UI.cMsgTo = el.dataset.id; UI.clinicNav = "messages"; render({ scrollTop: true }); },
   "c-staff-toggle": (el) => { try { requirePerm("staff.manage"); const s = DB.staff.find((x) => x.userId === el.dataset.id && x.clinicId === App.user.clinicId); s.active = !s.active; const u = DB.users.find((x) => x.id === s.userId); if (!s.active) DB.sessions.filter((x) => x.userId === u.id).forEach((x) => (x.revoked = true)); audit("au_staff_change", null); saveDB(); render(); } catch (e) { toast(errMsg(e), "alert"); } }
 };
+Object.assign(ACTIONS, ACTIONS_EXTRA);
 const FORMS = {
   async login(form) {
     const id = form.querySelector("#li-id").value, pw = form.querySelector("#li-pw").value;
@@ -352,6 +353,7 @@ async function boot() {
   setLang(["en", "ar", "zh"].includes(saved) ? saved : "en");
   DB = loadDB();
   if (!DB || DB.version !== 3) { await seedDB(); saveDB(); }
+  DB.habits ||= [];
   if (api.auth.restore()) { const p = DB.profiles[App.user.id]; if (p?.lang) setLang(p.lang); UI.route = { name: "home", params: {} }; }
   render();
   setInterval(reminderTick, 20000); setTimeout(reminderTick, 1500);

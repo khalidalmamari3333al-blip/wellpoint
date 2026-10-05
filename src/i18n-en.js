@@ -274,3 +274,19 @@ Object.assign(STRINGS.en, {
   alarm_denied: "Notifications are blocked here. The alarm still rings while Wellpoint is open, and you can add it to your Clock.", alarm_ringing: "Ringing until you respond",
   alarm_os_note: "The alarm keeps ringing and vibrating until you choose an option. A website can only ring while it's open; add the alarm to your Clock to ring anytime."
 });
+Object.assign(STRINGS.en, {
+  tree_thirsty: "Your tree is a little thirsty", tree_thirsty_d: "One small step is all it needs to perk up again.",
+  tree_growing: "Your tree is growing", tree_growing_d: "Every glass of water and every dose helps it grow.",
+  tree_bloom: "Your tree is flourishing", tree_bloom_d: "You're looking after yourself beautifully today.",
+  water_count: "{n} of {g} glasses of water today",
+  next_step_now: "Your next step now",
+  ns_dose: "Take your {med} now", ns_water: "Drink glass number {n} of water", ns_walk: "A gentle 10-minute walk", ns_breath: "One minute of deep breathing", ns_winddown: "Put the screen down and get ready for sleep", ns_rest: "You're all done. Enjoy your rest",
+  cd_due: "Your dose is due", cd_next: "Next dose in", cd_next_tomorrow: "Next dose tomorrow in", cd_now: "Now", cd_hm: "{h}h {m}m", cd_ms: "{m}:{s}",
+  course_left: "{med}: {d} days left in the course",
+  streak_days: "{n} days in a row", streak_start: "Start your streak today", streak_today_done: "Today counts ✓", streak_keep: "One small step today keeps it going", streak_first: "Any small step counts",
+  shield_ready: "Rest-day shield ready: one missed day a week won't break your streak", shield_used: "Shield used this week",
+  water_logged: "Glass logged · {n}/{g}", water_goal_done: "Water goal reached for today!", walk_logged: "Walk logged. Nicely done", winddown_logged: "Good night. Rest well", breath_logged: "One calm minute done",
+  gift_title: "A little surprise for you", gift_d: "Tap the gift to open it", gift_open: "Open", gift_tip_title: "Today's secret tip", gift_tip_note: "General wellness tip, not medical advice.", gift_thanks: "Thanks!",
+  breath_title: "One minute of breathing", breath_d: "Follow the circle: breathe in as it grows, out as it shrinks.", breath_in: "Breathe in", breath_out: "Breathe out", breath_done: "Done",
+  tip_1: "Keep a water bottle where you can see it. You'll drink more without thinking.", tip_2: "Pair your medication with a daily habit, like your morning coffee.", tip_3: "A 10-minute walk after a meal is good for digestion and energy.", tip_4: "Sunlight in the morning helps you sleep better at night.", tip_5: "Slow breathing for one minute can help you feel calmer.", tip_6: "Keep the same bedtime, even on weekends.", tip_7: "Stand up and stretch for a minute every hour.", tip_8: "A glass of water when you wake up is a great start.", tip_9: "Write down questions for your doctor as soon as you think of them.", tip_10: "Smiling at someone today is good for both of you."
+});

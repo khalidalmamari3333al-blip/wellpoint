@@ -16,6 +16,7 @@ Source lives in `src/`. `./build.sh` bundles it into `wellpoint.html`.
 | `src/i18n-*.js` | Translation dictionaries (en / ar / zh) |
 | `src/core.js` | Mock backend: auth (PBKDF2), sessions, RBAC, audit log, integration adapters (mock / FHIR / API / manual), notifications + email outbox, clinical rules (demo), scheduler, AI service |
 | `src/ui-*.js` | Patient, caregiver and clinic interfaces |
+| `src/ui-wellbeing.js` | Calm-engagement home (experimental): health tree, "next step now" button, live medication countdown, streak with a weekly rest-day shield, haptics, confetti and surprise tips |
 | `src/events.js` | Event delegation, forms, boot |
 
 The full architecture, database schema, API design and next steps are in the app's **Platform & architecture** page.
