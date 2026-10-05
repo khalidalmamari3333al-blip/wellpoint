@@ -622,3 +622,109 @@ function aiLocalAnswer(q, patientId) {
   if (has("organize", "نظم", "整理", "sleep", "نوم", "睡")) return { text: t("ai_organize"), used: ["src_profile"] };
   return { text: t("ai_generic"), used: [] };
 }
+
+/* ---------- routine-based medication planner ----------
+   Builds clock times from the patient's own routine (wake, meals, sleep, busy hours).
+   Frequency, dose and food instructions are inputs and are never changed. */
+function planFromRoutine(meds, a) {
+  const W = hmToMin(a.wake || "07:00"); let S = hmToMin(a.sleep || "23:00"); if (S <= W) S += 1440;
+  const mealAt = { breakfast: a.breakfast ? hmToMin(a.breakfast) : null, lunch: a.lunch ? hmToMin(a.lunch) : null, dinner: a.dinner ? hmToMin(a.dinner) : null };
+  const slot = { breakfast: mealAt.breakfast ?? W + 30, lunch: mealAt.lunch ?? Math.round((W + S) / 2), dinner: mealAt.dinner ?? S - 120 };
+  const busy = a.busy ? [hmToMin(a.busy[0]), hmToMin(a.busy[1])] : null;
+  const OFF = { before: -30, after: 20, with: 0, any: 0 };
+  const clamp = (m) => Math.min(Math.max(m, W), S - 15);
+  const out = meds.map((med) => {
+    const n = FREQ_COUNT[med.frequency] ?? 1; const reasons = [];
+    if (!n) return { med, times: [], reasons: [{ k: "why_prn" }] };
+    let anchors;
+    if (n === 1) {
+      const evening = med.times?.[0] && hmToMin(med.times[0]) >= 16 * 60;
+      anchors = [evening ? "dinner" : "breakfast"]; if (evening) reasons.push({ k: "why_rt_evening" });
+    } else if (n === 2) anchors = ["breakfast", "dinner"];
+    else if (n === 3) anchors = ["breakfast", "lunch", "dinner"];
+    else anchors = null;
+    let times;
+    if (anchors) {
+      times = anchors.map((meal) => {
+        const base = slot[meal];
+        if (med.food === "any") reasons.push({ k: "why_rt_any" });
+        else if (mealAt[meal] != null) reasons.push({ k: "why_rt_meal_" + med.food, p: { meal: t("meal_" + meal), time: fmtTime(minToHm(mealAt[meal])) } });
+        else reasons.push({ k: "why_rt_meal_skipped", p: { meal: t("meal_" + meal) } });
+        return base + OFF[med.food];
+      });
+    } else {
+      const step = (S - 30 - (W + 30)) / 3; times = [0, 1, 2, 3].map((i) => Math.round(W + 30 + i * step)); reasons.push({ k: "why_rt_spread" });
+    }
+    times = times.map((m) => {
+      m = clamp(m);
+      if (busy && m >= busy[0] && m < busy[1]) {
+        if (med.food === "any") { m = clamp(m - busy[0] < busy[1] - m ? busy[0] - 15 : busy[1] + 15); reasons.push({ k: "why_rt_busy" }); }
+        else reasons.push({ k: "why_rt_busy_kept" });
+      }
+      return Math.round(m / 5) * 5;
+    });
+    return { med, times, reasons };
+  });
+  if (a.group) {
+    const fixed = out.filter((o) => o.med.food !== "any").flatMap((o) => o.times);
+    out.filter((o) => o.med.food === "any").forEach((o) => {
+      o.times = o.times.map((m) => { const near = fixed.find((f) => Math.abs(f - m) <= 30 && f !== m); if (near != null && !(busy && near >= busy[0] && near < busy[1])) { o.reasons.push({ k: "why_rt_grouped" }); return near; } return m; });
+      fixed.push(...o.times);
+    });
+  }
+  return out.map((o) => {
+    const seen = new Set();
+    return { med: o.med, times: [...new Set(o.times.map(minToHm))].sort(), reasons: o.reasons.filter((r) => { const k = r.k + JSON.stringify(r.p || {}); if (seen.has(k)) return false; seen.add(k); return true; }) };
+  });
+}
+function alarmLabel(med) {
+  const dose = (med.dose || "").split("·")[0].trim();
+  return `💊 ${med.name}${dose ? " " + dose : ""} · ${t("food_" + med.food)}`;
+}
+function androidAlarmHref(time, label) {
+  const [h, m] = time.split(":").map(Number);
+  return `intent:#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${h};i.android.intent.extra.alarm.MINUTES=${m};S.android.intent.extra.alarm.MESSAGE=${encodeURIComponent(label)};B.android.intent.extra.alarm.VIBRATE=true;end`;
+}
+function iosShortcutHref(time, label) {
+  return `shortcuts://run-shortcut?name=${encodeURIComponent("Wellpoint Alarm")}&input=text&text=${encodeURIComponent(time + "|" + label)}`;
+}
+function icsForDoses(items) {
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z";
+  const day = today().replace(/-/g, "");
+  const ev = items.map(({ med, time }, i) => [
+    "BEGIN:VEVENT", `UID:${med.id}-${time.replace(":", "")}-${i}@wellpoint`, `DTSTAMP:${stamp}`,
+    `DTSTART;TZID=Asia/Muscat:${day}T${time.replace(":", "")}00`, "DURATION:PT10M",
+    `RRULE:FREQ=DAILY${med.end ? ";UNTIL=" + med.end.replace(/-/g, "") + "T235959Z" : ""}`,
+    `SUMMARY:${alarmLabel(med)}`, "BEGIN:VALARM", "TRIGGER:PT0M", "ACTION:DISPLAY", `DESCRIPTION:${alarmLabel(med)}`, "END:VALARM", "END:VEVENT"
+  ].join("\r\n"));
+  return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Wellpoint//Medication reminders//EN", ...ev, "END:VCALENDAR"].join("\r\n");
+}
+
+/* ---------- ringing alarm: sound + vibration until the user responds ---------- */
+const Ring = {
+  ctx: null, timer: null, note: null, lock: null,
+  unlock() { try { this.ctx ??= new (window.AudioContext || window.webkitAudioContext)(); if (this.ctx.state === "suspended") this.ctx.resume(); } catch {} },
+  chime() {
+    const c = this.ctx; if (!c) return; const now = c.currentTime;
+    [880, 1108.7, 1318.5].forEach((f, i) => {
+      const o = c.createOscillator(), g = c.createGain(), d = now + i * 0.18;
+      o.type = "sine"; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, d); g.gain.exponentialRampToValueAtTime(0.28, d + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, d + 0.55);
+      o.connect(g).connect(c.destination); o.start(d); o.stop(d + 0.6);
+    });
+  },
+  start(title, body, tag) {
+    this.stop(); this.unlock();
+    const pr = DB.profiles[App.user?.id]?.prefs || {};
+    const tick = () => { if (pr.alarmSound !== false) this.chime(); if (pr.alarmVibrate !== false) { try { navigator.vibrate?.([500, 250, 500, 250, 500]); } catch {} } };
+    tick(); this.timer = setInterval(tick, 2600);
+    try { if ("Notification" in window && Notification.permission === "granted") this.note = new Notification(title, { body, tag, requireInteraction: true, renotify: true, silent: false }); } catch {}
+    try { navigator.wakeLock?.request("screen").then((l) => (this.lock = l)).catch(() => {}); } catch {}
+  },
+  stop() {
+    clearInterval(this.timer); this.timer = null;
+    try { navigator.vibrate?.(0); } catch {}
+    try { this.note?.close(); } catch {} this.note = null;
+    try { this.lock?.release(); } catch {} this.lock = null;
+  }
+};

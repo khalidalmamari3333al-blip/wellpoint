@@ -220,3 +220,26 @@ STRINGS.zh = {
   gov_muscat: "马斯喀特", gov_n_batinah: "北巴提奈", gov_s_batinah: "南巴提奈", gov_buraimi: "布赖米", gov_dakhiliyah: "内地省", gov_dhahirah: "扎希拉", gov_n_sharqiyah: "北沙尔基亚", gov_s_sharqiyah: "南沙尔基亚", gov_dhofar: "佐法尔", gov_musandam: "穆桑达姆", gov_wusta: "中部省",
   sp_general: "全科", sp_family: "家庭医学", sp_internal: "内科", sp_cardiology: "心内科", sp_endocrinology: "内分泌科", sp_dermatology: "皮肤科", sp_dentistry: "口腔科", sp_pediatrics: "儿科", sp_orthopedics: "骨科", sp_ent: "耳鼻喉科", sp_ophthalmology: "眼科", sp_gynecology: "妇产科", sp_urology: "泌尿科", sp_neurology: "神经内科", sp_psychiatry: "精神科", sp_physiotherapy: "物理治疗", sp_gastro: "消化内科"
 };
+Object.assign(STRINGS.zh, {
+  rt_title: "规划我的用药时间", rt_cta: "按我的作息安排",
+  rt_intro: "我会问几个关于你日常作息的简短问题，然后把每种药安排进去。我不会更改任何剂量，也不会更改每日服药次数。",
+  rt_q_wake: "你通常几点起床？", rt_q_breakfast: "你通常几点吃早餐？", rt_q_lunch: "午餐呢？", rt_q_dinner: "晚餐呢？", rt_q_sleep: "你通常几点睡觉？",
+  rt_q_busy: "一天中有没有不方便吃药的时段，比如上班、上学或开车？", rt_q_group: "要不要把可以一起服用的药合并，减少提醒次数？",
+  rt_skip_meal: "我通常不吃", rt_no_busy: "没有，什么时候都行", rt_busy_from: "忙碌开始", rt_busy_to: "结束", rt_busy_invalid: "结束时间应晚于开始时间。",
+  rt_yes_group: "好，减少提醒", rt_no_group: "不，分开提醒",
+  rt_result_title: "这是适合你作息的用药计划", rt_result_d: "时间遵循每张处方的频次和饮食要求。保存前请核对。",
+  rt_apply: "保存此计划", rt_applied: "计划已保存。", rt_edit_routine: "修改我的回答", rt_no_meds: "请先添加药物，我再按你的作息安排。",
+  tl_routine: "已按你的作息规划用药时间",
+  why_rt_meal_before: "按要求在{meal}（{time}）前 30 分钟。", why_rt_meal_after: "按要求在{meal}（{time}）后不久。", why_rt_meal_with: "按要求随{meal}（{time}）服用。",
+  why_rt_meal_skipped: "你通常不吃{meal}，所以安排在该餐的常规时间。请咨询药师是否合适。", why_rt_any: "没有饮食要求，所以安排在你已有的一餐，方便记住。",
+  why_rt_busy: "已移出你的忙碌时段。", why_rt_busy_kept: "因与用餐绑定，落在你的忙碌时段，请保持闹钟开启。", why_rt_grouped: "与另一种药合并，减少提醒次数。",
+  why_rt_evening: "与你当前的提醒一样，保留在晚上。", why_rt_spread: "在清醒时段内平均分布。",
+  meal_breakfast: "早餐", meal_lunch: "午餐", meal_dinner: "晚餐",
+  clk_title: "添加到手机时钟", clk_d: "Wellpoint 已设置好每个闹钟的时间和名称。手机会打开时钟应用让你确认。",
+  clk_android: "时钟（安卓）", clk_ios: "时钟（iPhone）", clk_ios_setup: "iPhone：一次性设置", clk_ios_help: "在“快捷指令”中创建名为 \"Wellpoint Alarm\" 的快捷指令：按 \"|\" 拆分输入文本，然后用“创建闹钟”，第一部分作为时间，第二部分作为标签。之后每个“时钟（iPhone）”按钮都会创建闹钟。",
+  clk_calendar: "添加每日提醒到日历", clk_calendar_d: "如果时钟不可用，任何手机都适用。每次用药每天重复，并在准点提醒。",
+  clk_label: "闹钟名称", clk_note: "网页无法自行保存时钟闹钟，手机总会先征得你的同意。Wellpoint 手机应用可以直接设置（安卓 AlarmManager，iPhone AlarmKit）。", clk_btn: "手机闹钟",
+  alarm_settings: "闹钟设置", alarm_sound: "闹钟铃声", alarm_vibrate: "振动", alarm_enable: "允许闹钟通知", alarm_enabled: "闹钟通知已开启。",
+  alarm_denied: "此处已阻止通知。Wellpoint 打开时闹钟仍会响铃，你也可以将其添加到时钟。", alarm_ringing: "持续响铃，直到你响应",
+  alarm_os_note: "闹钟会持续响铃和振动，直到你选择一个选项。网页只有在打开时才能响铃；添加到手机时钟即可随时响铃。"
+});

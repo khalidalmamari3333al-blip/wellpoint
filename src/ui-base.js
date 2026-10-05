@@ -167,8 +167,10 @@ function render(opts = {}) {
   document.documentElement.setAttribute("data-size", App.profile?.simple ? "large" : "normal");
   let html;
   try { html = routeHtml(); } catch (e) { console.error(e); html = `<div class="patient-shell"><div class="empty" style="margin-top:40px">${icon("alert")}<h4>${esc(t(e.code || "err_generic"))}</h4><button class="btn" data-go="home">${esc(t("go_home"))}</button></div></div>`; }
+  const openFolds = opts.scrollTop ? [] : $$("details[id][open]", app).map((d) => d.id);
   app.classList.toggle("entering", !!opts.scrollTop || !render.done);
   app.innerHTML = html;
+  openFolds.forEach((id) => { const d = document.getElementById(id); if (d) d.open = true; });
   renderLayer();
   if (opts.scrollTop) window.scrollTo(0, 0); else window.scrollTo(0, y);
   armReveal();
@@ -176,11 +178,11 @@ function render(opts = {}) {
   render.done = true;
 }
 function armReveal() {
-  if (!("IntersectionObserver" in window) || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (!("IntersectionObserver" in window) || matchMedia("(prefers-reduced-motion: reduce)").matches || CSS.supports?.("animation-timeline: view()")) return;
   const els = $$(".page > *, .page .reveal, .page .stack > .card").filter((el) => el.getBoundingClientRect().top > innerHeight - 20);
   const io = new IntersectionObserver((ents) => {
     let i = 0;
-    ents.forEach((en) => { if (en.isIntersecting) { en.target.style.transitionDelay = (i++ * 70) + "ms"; en.target.classList.add("in"); io.unobserve(en.target); } });
+    ents.forEach((en) => { if (en.isIntersecting) { en.target.style.transitionDelay = Math.min(i++, 3) * 60 + "ms"; en.target.classList.add("in"); io.unobserve(en.target); } });
   }, { threshold: 0.08, rootMargin: "0px 0px -6% 0px" });
   els.forEach((el) => { el.classList.add("reveal-armed"); io.observe(el); });
 }

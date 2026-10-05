@@ -119,7 +119,7 @@ a { color: var(--accent); }
 .entering .page > *:nth-child(2) { animation-delay: .05s; } .entering .page > *:nth-child(3) { animation-delay: .1s; }
 .entering .page > *:nth-child(4) { animation-delay: .15s; } .entering .page > *:nth-child(5) { animation-delay: .2s; }
 .entering .page > *:nth-child(6) { animation-delay: .25s; } .entering .page > *:nth-child(n+7) { animation-delay: .3s; }
-.reveal-armed { opacity: 0; transform: translateY(28px) scale(.985); transition: opacity .9s var(--ease), transform 1.1s var(--ease); will-change: opacity, transform; }
+.reveal-armed { opacity: 0; transform: translate3d(0, 22px, 0); transition: opacity .8s var(--ease), transform .95s var(--ease); }
 .reveal-armed.in { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-delay: 0s !important; transition-duration: .001ms !important; }
@@ -437,3 +437,28 @@ tbody tr:hover { background: var(--surface-2); }
 .tile .big { font-family: var(--font-body); font-weight: 650; }
 .kpi .v { font-family: var(--font-body); font-weight: 650; }
 .brand { font-family: var(--font-body); font-weight: 700; }
+
+/* ---------- scroll motion v2 ---------- */
+/* Scroll-linked reveal: progress follows the finger, so it never lags or pops. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .page > *:nth-child(n+3):not(.composer):not(.suggest), .page .stack > .card, .page .list-card, .page .fold, .page .timeline > .tl-item, .page .chat > .msg {
+      animation: scroll-in linear both; animation-timeline: view(); animation-range: entry 5% entry 85%;
+    }
+    @keyframes scroll-in { from { opacity: 0; transform: translate3d(0, 26px, 0); } to { opacity: 1; transform: none; } }
+  }
+}
+.tabbar { transition: transform .5s var(--ease), opacity .4s var(--ease); }
+body.bar-hidden .tabbar { transform: translate3d(0, calc(100% + 12px), 0); opacity: 0; }
+.composer { transition: bottom .5s var(--ease); }
+body.bar-hidden .composer { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+html { scroll-padding-top: 76px; }
+.rt-control { padding: 14px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.rt-answer { display: flex; gap: 10px; }
+.rt-answer .input { flex: 1; font-family: var(--font-data); font-size: 1.1rem; }
+.clk-time { font-family: var(--font-data); font-weight: 600; font-size: 1.05rem; min-width: 62px; padding-top: 2px; }
+@keyframes ring-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+.ringing { align-self: center; animation: ring-pulse 1.3s ease-in-out infinite; }
+@keyframes bell-shake { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(14deg); } 30% { transform: rotate(-12deg); } 45% { transform: rotate(8deg); } 60% { transform: rotate(-5deg); } 75% { transform: rotate(2deg); } }
+.alarm-bell .ico { animation: bell-shake 1.3s var(--ease) infinite; transform-origin: 50% 10%; }
+@media (prefers-reduced-motion: reduce) { .ringing, .alarm-bell .ico { animation: none; } }

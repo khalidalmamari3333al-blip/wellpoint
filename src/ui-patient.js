@@ -367,13 +367,23 @@ function medsView() {
       <div class="row"><div class="ring" style="--p:${sched.length ? Math.round((taken / sched.length) * 100) : 0}"><span>${fmtNum(taken)}/${fmtNum(sched.length)}</span></div><div class="grow"><h3>${esc(t("today_schedule"))}</h3><p class="small muted">${adh != null ? esc(t("adherence_7d", { v: fmtNum(adh) })) : ""}</p></div></div>
       <div>${sched.map((i) => `<div class="dose ${i.status}"><span class="t">${esc(fmtTime(i.time))}</span><div class="grow"><h4>${esc(i.med.name)}</h4><p class="xs muted">${esc(i.med.dose || "")} · ${esc(t("food_" + i.med.food))}</p></div>
         ${i.status === "taken" ? `<span class="pill good">${esc(t("taken"))}</span>` : `<div class="row" style="gap:6px">${i.status === "missed" ? `<span class="pill bad">${esc(t("missed"))}</span>` : ""}<button class="btn sm good" data-act="dose" data-med="${i.med.id}" data-time="${i.time}" data-s="taken" aria-label="${esc(t("taken"))}">${icon("check", "ico-sm")}</button></div>`}</div>`).join("") || `<p class="muted small">${esc(t("nothing_today"))}</p>`}</div>
-      <div class="row wrap"><button class="btn sm secondary" data-act="test-alarm">${icon("bell", "ico-sm")} ${esc(t("test_reminder"))}</button><button class="btn sm ghost" data-act="ai-explain-schedule">${icon("sparkle", "ico-sm")} ${esc(t("explain_schedule"))}</button></div>
-      <div id="sched-explain"></div>
+      <div class="row wrap"><button class="btn sm" data-go="routine">${icon("sparkle", "ico-sm")} ${esc(t("rt_cta"))}</button><button class="btn sm secondary" data-act="clock-all">${icon("clock", "ico-sm")} ${esc(t("clk_btn"))}</button></div>
     </section>
     <section class="stack"><h3>${esc(t("my_meds"))}</h3>${meds.map((m) => `<button class="card tap row reveal" ${isCaregiver() ? "" : `data-go="med-edit" data-id="${m.id}"`}><div class="iconwrap">${icon("pill")}</div><div class="grow"><div class="row wrap" style="gap:6px"><h4>${esc(m.name)}</h4>${m.verified ? `<span class="pill good">${esc(t("clinic_verified"))}</span>` : `<span class="pill plain">${esc(t("self_entered"))}</span>`}</div><p class="small muted">${esc(m.dose || "—")} · ${esc(t("freq_" + m.frequency))}</p><p class="xs faint num">${m.times.map(fmtTime).join(" · ")}</p></div>${isCaregiver() ? "" : flipIcon("chevron", "ico-sm")}</button>`).join("")}</section>`
     : emptyState("pill", t("no_meds"), t("no_meds_d"), isCaregiver() ? "" : `<button class="btn" data-go="med-edit">${icon("plus", "ico-sm")} ${esc(t("add_first_med"))}</button>`)}
+    ${meds.length && !isCaregiver() ? alarmSettings() : ""}
     <div class="banner">${icon("shield")}<span class="small">${esc(t("med_safety"))}</span></div>
   </div>`);
+}
+function alarmSettings() {
+  const pr = DB.profiles[App.user.id].prefs;
+  const perm = "Notification" in window ? Notification.permission : "unsupported";
+  const sw = (k, label) => `<div class="li"><span class="grow small">${esc(label)}</span><button class="switch ${pr[k] !== false ? "on" : ""}" data-act="alarm-pref" data-k="${k}" role="switch" aria-checked="${pr[k] !== false}" aria-label="${esc(label)}"></button></div>`;
+  return `<details class="card fold" id="fold-alarm"><summary><span class="iconwrap">${icon("bell", "ico-sm")}</span><h4 class="grow">${esc(t("alarm_settings"))}</h4>${icon("chevron", "ico-sm fold-ico")}</summary><div class="stack fold-body">
+    <div class="list">${sw("alarmSound", t("alarm_sound"))}${sw("alarmVibrate", t("alarm_vibrate"))}</div>
+    ${perm === "granted" ? `<span class="pill good">${esc(t("alarm_enabled"))}</span>` : `<div><button class="btn sm secondary" data-act="alarm-perm">${esc(t("alarm_enable"))}</button></div>`}
+    <button class="btn sm ghost" data-act="test-alarm">${icon("bell", "ico-sm")} ${esc(t("test_reminder"))}</button>
+    <p class="hint">${esc(t("alarm_os_note"))}</p></div></details>`;
 }
 function medEditView() {
   const pid = PID(); const id = UI.route.params.id;
@@ -416,6 +426,7 @@ function alarmHtml() {
     <button class="btn xl block good" data-act="alarm" data-v="taken">${icon("check")} ${esc(t("taken").toUpperCase())}</button>
     <div class="grid-2"><button class="btn secondary" data-act="alarm" data-v="snooze">${icon("clock", "ico-sm")} ${esc(t("snooze_10"))}</button><button class="btn secondary" data-act="alarm" data-v="details">${esc(t("view_details"))}</button></div>
     <button class="btn ghost sm" data-act="alarm" data-v="dismiss">${esc(t("dismiss"))}</button>
+    <span class="pill warn ringing">${esc(t("alarm_ringing"))}</span>
     <p class="xs faint">${esc(t("alarm_os_note"))}</p></div></div>`;
 }
 function reminderTick() {
@@ -427,7 +438,7 @@ function reminderTick() {
     if (it.status === "taken" || UI.alarmed[key]) continue;
     const snooze = UI.snoozed[key];
     const dueAt = snooze || hmToMin(it.time);
-    if (n >= dueAt && n - dueAt <= 5) { UI.alarmed[key] = true; UI.alarm = { medId: it.med.id, time: it.time, key }; renderLayer(); return; }
+    if (n >= dueAt && n - dueAt <= 5) { UI.alarmed[key] = true; showAlarm({ medId: it.med.id, time: it.time, key }); return; }
   }
 }
 
@@ -453,11 +464,11 @@ function healthView() {
     <section class="stack"><div class="row between"><h3>${esc(t("latest_measurements"))}</h3><button class="btn sm secondary" data-go="measure">${icon("plus", "ico-sm")} ${esc(t("add"))}</button></div>
       ${tiles.length ? `<div class="grid-2">${tiles.map(([m, k, f, u]) => `<div class="tile"><span class="xs faint">${esc(t(k))}</span><span class="big">${esc(f(m))} <span class="xs faint">${esc(u)}</span></span><span class="xs faint">${esc(relDays(m.at))} · ${esc(t("src_" + (m.source || "patient")))}</span></div>`).join("")}</div>` : emptyState("activity", t("no_measurements"), t("no_measurements_d"))}</section>
     <nav class="card list-card">${[["summary", "chart", "health_summary"], ["timeline", "activity", "health_timeline"], ["journal", "journal", "journal"], ...(allow("docs") ? [["documents", "file", "documents"]] : [])].map(([r, ic, k]) => `<button class="quiet-link" data-go="${r}">${icon(ic, "ico-sm")}<span>${esc(t(k))}</span>${flipIcon("chevron", "ico-sm")}</button>`).join("")}</nav>
-    <details class="card fold reveal"><summary><span class="iconwrap">${icon("link", "ico-sm")}</span><h4 class="grow">${esc(t("connected_sources"))}</h4>${icon("chevron", "ico-sm fold-ico")}</summary><div class="stack fold-body"><p class="small muted">${esc(t("connected_sources_d"))}</p>
+    <details class="card fold reveal" id="fold-sources"><summary><span class="iconwrap">${icon("link", "ico-sm")}</span><h4 class="grow">${esc(t("connected_sources"))}</h4>${icon("chevron", "ico-sm fold-ico")}</summary><div class="stack fold-body"><p class="small muted">${esc(t("connected_sources_d"))}</p>
       <div class="list">${ints.map((i) => { const c = CLINICS.find((x) => x.id === i.clinicId); return `<div class="li"><div class="iconwrap">${icon("link")}</div><div class="grow"><b>${esc(clinicName(c))}</b><p class="xs muted">${esc(t(Adapters[i.adapter].label))} · ${i.lastSync ? esc(t("synced", { when: relDays(i.lastSync) })) : esc(t("not_synced"))}</p></div>${i.status === "connected" && i.adapter !== "manual" ? `<button class="btn sm secondary" data-act="sync" data-c="${i.clinicId}">${icon("refresh", "ico-sm")} ${esc(t("sync"))}</button>` : i.status === "available" ? `<button class="btn sm" data-act="connect" data-c="${i.clinicId}">${esc(t("connect"))}</button>` : `<span class="pill plain">${esc(t("clinic_updates"))}</span>`}</div>`; }).join("")}
       ${(p.devices || []).map((dv) => `<div class="li"><div class="iconwrap good">${icon("activity")}</div><div class="grow"><b>${esc(t("dev_" + dv))}</b><p class="xs muted">${esc(t("dev_mock"))}</p></div><span class="pill good">${esc(t("connected"))}</span></div>`).join("")}</div>
       <p class="xs faint">${esc(t("shifa_note"))}</p></div></details>
-    <details class="card fold reveal"><summary><span class="iconwrap">${icon("refresh", "ico-sm")}</span><h4 class="grow">${esc(t("care_loop"))}</h4>${icon("chevron", "ico-sm fold-ico")}</summary><div class="stack fold-body"><p class="small muted">${esc(t("care_loop_d"))}</p>
+    <details class="card fold reveal" id="fold-loop"><summary><span class="iconwrap">${icon("refresh", "ico-sm")}</span><h4 class="grow">${esc(t("care_loop"))}</h4>${icon("chevron", "ico-sm fold-ico")}</summary><div class="stack fold-body"><p class="small muted">${esc(t("care_loop_d"))}</p>
       <div class="flow">${flow.map((k, i) => `<div class="flow-step ${i < cur ? "done" : i === cur ? "now" : ""}"><span class="n">${i === flow.length - 1 ? "↻" : fmtNum(i + 1)}</span><p class="small">${esc(t(k))}</p></div>`).join("")}</div></div></details>
   </div>`);
 }
@@ -788,9 +799,62 @@ function outboxForPending() {
   return `<h3>${esc(t("email_outbox"))}</h3><div class="stack" style="margin-top:12px">${mine.map((e) => { const r = renderEmail(e); return `<article class="email"><div class="email-head"><b>${esc(r.subject)}</b><br><span class="xs muted">${esc(e.to)}</span></div><div class="email-body">${esc(r.body).replace(/\n/g, "<br>")}</div></article>`; }).join("") || `<p class="muted">${esc(t("no_emails"))}</p>`}<button class="btn secondary" data-act="sheet-close">${esc(t("close"))}</button></div>`;
 }
 
+/* ---------- ROUTINE PLANNER (AI asks, then fits medications to the routine) ---------- */
+const RT_STEPS = ["wake", "breakfast", "lunch", "dinner", "sleep", "busy", "group"];
+function showAlarm(a) {
+  const m = DB.medications.find((x) => x.id === a.medId); if (!m) return;
+  UI.alarm = a; renderLayer();
+  Ring.start(t("time_for_med"), `${fmtTime(a.time)} · ${alarmLabel(m)}`, a.key);
+}
+function rtAnswerText(k, v) {
+  if (k === "busy") return v ? `${fmtTime(v[0])} – ${fmtTime(v[1])}` : t("rt_no_busy");
+  if (k === "group") return t(v ? "rt_yes_group" : "rt_no_group");
+  return v ? fmtTime(v) : t("rt_skip_meal");
+}
+function routineView() {
+  const pid = PID(); const p = DB.profiles[pid];
+  const meds = DB.medications.filter((m) => m.patientId === pid && m.active && FREQ_COUNT[m.frequency]);
+  if (!meds.length) return shell(`${header(t("rt_title"), { back: true })}<div class="page stack-lg">${emptyState("pill", t("rt_no_meds"), "", `<button class="btn" data-go="med-edit">${esc(t("add_med"))}</button>`)}</div>`, { tab: "meds" });
+  const r = UI.rt ??= { step: 0, a: { wake: p.routine?.wake || p.prefs.wake || "07:00", breakfast: p.routine ? p.routine.breakfast : "07:30", lunch: p.routine ? p.routine.lunch : "13:30", dinner: p.routine ? p.routine.dinner : "20:00", sleep: p.routine?.sleep || p.prefs.sleep || "23:00", busy: p.routine?.busy ?? null, group: p.routine?.group ?? true } };
+  const bubbles = [`<div class="msg ai">${esc(t("rt_intro"))}</div>`];
+  RT_STEPS.slice(0, r.step).forEach((k) => { bubbles.push(`<div class="msg ai">${esc(t("rt_q_" + k))}</div>`, `<div class="msg me">${esc(rtAnswerText(k, r.a[k]))}</div>`); });
+  let control = "";
+  if (r.step < RT_STEPS.length) {
+    const k = RT_STEPS[r.step];
+    bubbles.push(`<div class="msg ai" id="rt-q">${esc(t("rt_q_" + k))}</div>`);
+    if (["wake", "breakfast", "lunch", "dinner", "sleep"].includes(k)) control = `<div class="rt-answer"><input class="input" type="time" id="rt-in" value="${esc(r.a[k] || (k === "breakfast" ? "07:30" : k === "lunch" ? "13:30" : k === "dinner" ? "20:00" : "07:00"))}" aria-label="${esc(t("rt_q_" + k))}"><button class="btn" data-act="rt-answer">${esc(t("continue"))}</button></div>${["breakfast", "lunch", "dinner"].includes(k) ? `<button class="chip" data-act="rt-skip">${esc(t("rt_skip_meal"))}</button>` : ""}`;
+    if (k === "busy") control = `<div class="grid-2">${field("rt-from", t("rt_busy_from"), `<input class="input" type="time" id="rt-from" value="${esc(r.a.busy?.[0] || "08:00")}">`)}${field("rt-to", t("rt_busy_to"), `<input class="input" type="time" id="rt-to" value="${esc(r.a.busy?.[1] || "14:00")}">`)}</div><div class="row wrap"><button class="btn" data-act="rt-answer">${esc(t("continue"))}</button><button class="chip" data-act="rt-skip">${esc(t("rt_no_busy"))}</button></div>`;
+    if (k === "group") control = `<div class="row wrap"><button class="btn" data-act="rt-group" data-v="1">${esc(t("rt_yes_group"))}</button><button class="btn secondary" data-act="rt-group" data-v="0">${esc(t("rt_no_group"))}</button></div>`;
+  }
+  let result = "";
+  if (r.plan) {
+    result = `<section class="card stack" id="rt-result"><span class="eyebrow">${esc(t("rt_title"))}</span><h2>${esc(t("rt_result_title"))}</h2><p class="small muted">${esc(t("rt_result_d"))}</p>
+      <div class="list">${r.plan.map((o) => `<div class="li" style="align-items:flex-start"><div class="iconwrap">${icon("pill", "ico-sm")}</div><div class="grow stack-sm"><b>${esc(o.med.name)}</b><span class="xs muted">${esc(o.med.dose || "")} · ${esc(t("freq_" + o.med.frequency))} · ${esc(t("food_" + o.med.food))}</span>
+        <div class="slots">${o.times.map((tm) => `<span class="slot on">${esc(fmtTime(tm))}</span>`).join("")}</div>${whyBlock(o.reasons, t("why_these_times"))}</div></div>`).join("")}</div>
+      <div id="rt-ai" class="small muted"></div>
+      <p class="hint">${esc(t("why_times_never_dose"))}</p>
+      <div class="row wrap"><button class="btn good" data-act="rt-apply">${icon("check", "ico-sm")} ${esc(t("rt_apply"))}</button><button class="btn ghost" data-act="rt-restart">${esc(t("rt_edit_routine"))}</button></div></section>`;
+  }
+  return shell(`${header(t("rt_title"), { back: true })}<div class="page stack-lg">
+    <div class="chat">${bubbles.join("")}</div>${control ? `<div class="stack rt-control">${control}</div>` : ""}${result}
+  </div>`, { tab: "meds" });
+}
+function clockSheet(items) {
+  const ua = navigator.userAgent; const isAndroid = /Android/i.test(ua), isIOS = /iPhone|iPad|iPod/i.test(ua);
+  const showA = isAndroid || !isIOS, showI = isIOS || !isAndroid;
+  return `<div class="stack"><h3>${esc(t("clk_title"))}</h3><p class="small muted">${esc(t("clk_d"))}</p>
+    <div class="list">${items.map(({ med, time }) => { const label = alarmLabel(med); return `<div class="li" style="align-items:flex-start"><span class="clk-time num">${esc(fmtTime(time))}</span><div class="grow stack-sm"><span class="xs faint">${esc(t("clk_label"))}</span><b class="small" style="overflow-wrap:anywhere">${esc(label)}</b>
+      <div class="row wrap" style="gap:6px">${showA ? `<a class="btn sm" href="${esc(androidAlarmHref(time, label))}">${icon("clock", "ico-sm")} ${esc(t("clk_android"))}</a>` : ""}${showI ? `<a class="btn sm ${showA ? "secondary" : ""}" href="${esc(iosShortcutHref(time, label))}">${icon("clock", "ico-sm")} ${esc(t("clk_ios"))}</a>` : ""}<button class="btn sm ghost" data-act="copy" data-v="${esc(time + " — " + label)}">${icon("copy", "ico-sm")}</button></div></div></div>`; }).join("")}</div>
+    ${showI ? `<details class="why"><summary>${icon("info", "ico-sm")} ${esc(t("clk_ios_setup"))}</summary><p class="small muted" style="margin-top:8px">${esc(t("clk_ios_help"))}</p></details>` : ""}
+    <div class="divider"></div>
+    <div class="stack-sm"><b class="small">${esc(t("clk_calendar"))}</b><span class="xs muted">${esc(t("clk_calendar_d"))}</span><button class="btn secondary" data-act="clock-ics">${icon("calendar", "ico-sm")} ${esc(t("clk_calendar"))}</button></div>
+    <p class="hint">${esc(t("clk_note"))}</p>
+    <button class="btn ghost" data-act="sheet-close">${esc(t("close"))}</button></div>`;
+}
+
 const PATIENT_VIEWS = {
   home: homeView, discover: discoverView, clinic: clinicProfileView, book: bookView, "appt-done": apptDoneView, appointments: appointmentsView,
-  meds: medsView, "med-edit": medEditView, health: healthView, measure: measureView, checkin: checkinView, summary: summaryView, timeline: timelineView,
+  meds: medsView, "med-edit": medEditView, routine: routineView, health: healthView, measure: measureView, checkin: checkinView, summary: summaryView, timeline: timelineView,
   journal: journalView, documents: documentsView, ai: aiView, notifications: notificationsView, profile: profileView, "profile-edit": profileEditView,
   caregiver: caregiverView, settings: settingsView, plus: plusView, emails: emailsView, platform: () => platformView()
 };

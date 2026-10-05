@@ -71,15 +71,43 @@ const ACTIONS = {
   },
   // meds
   dose: (el) => { try { logDose(el.dataset.med, el.dataset.time, el.dataset.s); toast(t("dose_logged")); render(); } catch (e) { toast(errMsg(e), "alert"); } },
-  "test-alarm": () => { const it = scheduleFor(PID()).find((i) => i.status !== "taken") || scheduleFor(PID())[0]; if (!it) return; UI.alarm = { medId: it.med.id, time: it.time, key: "test" }; renderLayer(); },
+  "test-alarm": () => { const it = scheduleFor(PID()).find((i) => i.status !== "taken") || scheduleFor(PID())[0]; if (!it) return; showAlarm({ medId: it.med.id, time: it.time, key: "test" }); },
+  "alarm-pref": (el) => { const pr = DB.profiles[App.user.id].prefs; pr[el.dataset.k] = pr[el.dataset.k] === false; saveDB(); render(); },
+  "alarm-perm": async () => { if (!("Notification" in window)) { toast(t("alarm_denied"), "info"); return; } try { const r = await Notification.requestPermission(); toast(t(r === "granted" ? "alarm_enabled" : "alarm_denied"), r === "granted" ? "bell" : "info"); } catch { toast(t("alarm_denied"), "info"); } render(); },
+  "clock-all": () => { const items = scheduleFor(PID()).map((i) => ({ med: i.med, time: i.time })); UI.clockItems = items; openSheet(() => clockSheet(items)); },
+  "clock-ics": async () => {
+    const ics = icsForDoses(UI.clockItems || []);
+    const dl = window.claude?.use ? await window.claude.use("downloads").catch(() => null) : null;
+    if (dl) { try { await dl.save({ filename: "wellpoint-medication-reminders.ics", data: ics }); toast(t("calendar_saved")); return; } catch {} }
+    openSheet(() => `<h3>${esc(t("clk_calendar"))}</h3><p class="small muted" style="margin:8px 0">${esc(t("ics_fallback"))}</p><pre class="mono" style="white-space:pre-wrap;font-size:11px;background:var(--surface-2);padding:10px;border-radius:12px;max-height:40vh;overflow:auto">${esc(ics)}</pre><button class="btn block" data-act="copy" data-v="${esc(ics)}">${icon("copy", "ico-sm")} ${esc(t("copy"))}</button>`);
+  },
+  "rt-answer": () => {
+    const r = UI.rt; const k = RT_STEPS[r.step];
+    if (k === "busy") { const f = $("#rt-from")?.value, to = $("#rt-to")?.value; if (!f || !to || f >= to) { toast(t("rt_busy_invalid"), "alert"); return; } r.a.busy = [f, to]; }
+    else { const v = $("#rt-in")?.value; if (!v) return; r.a[k] = v; }
+    rtNext();
+  },
+  "rt-skip": () => { const r = UI.rt; r.a[RT_STEPS[r.step]] = null; rtNext(); },
+  "rt-group": (el) => { UI.rt.a.group = el.dataset.v === "1"; rtNext(); },
+  "rt-restart": () => { UI.rt.step = 0; UI.rt.plan = null; render(); },
+  "rt-apply": () => {
+    const pid = PID(); const r = UI.rt; const p = DB.profiles[pid];
+    r.plan.forEach((o) => { const m = DB.medications.find((x) => x.id === o.med.id); if (m && o.times.length) m.times = o.times; });
+    p.routine = { ...r.a }; p.prefs.wake = r.a.wake; p.prefs.sleep = r.a.sleep;
+    DB.timeline.push({ id: uid("tl"), patientId: pid, at: new Date().toISOString(), type: "medication", msg: { k: "tl_routine" }, source: "patient" });
+    saveDB(); UI.alarmed = {}; toast(t("rt_applied"));
+    const items = r.plan.flatMap((o) => o.times.map((time) => ({ med: DB.medications.find((x) => x.id === o.med.id), time })));
+    UI.rt = null; UI.clockItems = items; go("meds", {}, { replace: true });
+    openSheet(() => `<p class="eyebrow">${esc(t("rt_applied"))}</p>` + clockSheet(items));
+  },
   alarm: (el) => {
-    const a = UI.alarm; const v = el.dataset.v; UI.alarm = null;
+    const a = UI.alarm; const v = el.dataset.v; UI.alarm = null; Ring.stop();
     if (v === "taken") { logDose(a.medId, a.time, "taken"); toast(t("dose_logged")); }
     if (v === "snooze") { UI.snoozed[a.key] = hmToMin(nowHM()) + 10; delete UI.alarmed[a.key]; toast(t("snoozed"), "clock"); }
     if (v === "details") { renderLayer(); go("med-edit", { id: a.medId }); return; }
     render();
   },
-  "suggest-times": () => { const f = UI.medForm; const existing = DB.medications.filter((m) => m.patientId === PID() && m.active && m.id !== f.id).flatMap((m) => m.times); f.suggest = suggestTimes(f.frequency, f.food, PROF().prefs, existing); render(); },
+  "suggest-times": () => { const f = UI.medForm; const existing = DB.medications.filter((m) => m.patientId === PID() && m.active && m.id !== f.id).flatMap((m) => m.times); const rtn = PROF().routine; if (rtn) { const pl = planFromRoutine([{ ...f, id: f.id || "new" }], rtn)[0]; f.suggest = { times: pl.times, reasons: [...pl.reasons, { k: "why_times_never_dose" }] }; } else f.suggest = suggestTimes(f.frequency, f.food, PROF().prefs, existing); render(); },
   "apply-suggest": () => { const f = UI.medForm; f.times = [...f.suggest.times]; f.suggest = null; render(); toast(t("times_applied")); },
   "dismiss-suggest": () => { UI.medForm.suggest = null; render(); },
   "med-delete": (el) => confirmSheet({ title: t("remove_med"), body: t("remove_med_d"), cta: t("remove_med"), danger: true, onYes: () => { const m = DB.medications.find((x) => x.id === el.dataset.id); m.active = false; DB.timeline.push({ id: uid("tl"), patientId: m.patientId, at: new Date().toISOString(), type: "medication", msg: { k: "tl_med_removed", p: { med: m.name } }, source: "patient" }); saveDB(); UI.medForm = null; back("meds"); toast(t("med_removed")); } }),
@@ -229,8 +257,28 @@ function afterLogin() {
   go("home", {}, { replace: true });
 }
 
+function rtNext() {
+  const r = UI.rt; r.step++;
+  if (r.step >= RT_STEPS.length) {
+    const meds = DB.medications.filter((m) => m.patientId === PID() && m.active && FREQ_COUNT[m.frequency]);
+    r.plan = planFromRoutine(meds, r.a); render();
+    setTimeout(() => document.getElementById("rt-result")?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }), 60);
+    rtExplain(); return;
+  }
+  render(); setTimeout(() => { const q = document.getElementById("rt-q"); q?.scrollIntoView({ behavior: "smooth", block: "center" }); document.getElementById("rt-in")?.focus({ preventScroll: true }); }, 60);
+}
+async function rtExplain() {
+  const sample = UI.aiLive ? await window.claude.use("sample").catch(() => null) : null; if (!sample) return;
+  const r = UI.rt; const out = () => document.getElementById("rt-ai"); if (!r?.plan) return;
+  const lang = { en: "English", ar: "Arabic", zh: "Simplified Chinese" }[I18N.lang];
+  const prompt = `You are Wellpoint AI. Reply only in ${lang}, in 2 short warm sentences, no lists. Explain how this medication schedule fits the person's routine. Do not change, add or question any time, dose or frequency, and give no medical advice.\nRoutine: wake ${r.a.wake}, breakfast ${r.a.breakfast || "skipped"}, lunch ${r.a.lunch || "skipped"}, dinner ${r.a.dinner || "skipped"}, bed ${r.a.sleep}, busy ${r.a.busy ? r.a.busy.join("-") : "none"}.\nSchedule: ` + r.plan.map((o) => `${o.med.name} (${o.med.food} food): ${o.times.join(", ")}`).join("; ");
+  if (out()) out().innerHTML = `<span class="thinking">${esc(t("thinking"))}</span>`;
+  try { const { text } = await sample(prompt, { modelTier: "quick" }); if (out()) out().innerHTML = `<div class="banner">${icon("sparkle")}<span>${esc(text)}</span></div>`; } catch { if (out()) out().textContent = ""; }
+}
+
 /* ---------- delegation ---------- */
 document.addEventListener("click", (ev) => {
+  Ring.unlock();
   const el = ev.target.closest("[data-go],[data-act]"); if (!el) return;
   if (el.dataset.act) {
     const fn = ACTIONS[el.dataset.act]; if (!fn) return;
@@ -243,6 +291,8 @@ document.addEventListener("click", (ev) => {
   if (r === "med-edit") UI.medForm = null;
   if (r === "profile-edit") UI.pf = null;
   if (r === "measure") UI.meas = null;
+  if (r === "routine") UI.rt = null;
+  document.body.classList.remove("bar-hidden");
   if (!App.user && r === "platform") { UI.stack.push(UI.route); UI.route = { name: "platform", params: {} }; render({ scrollTop: true }); return; }
   if (["login", "signup", "forgot"].includes(r)) UI.auth.err = "";
   go(r, { id: el.dataset.id });
@@ -268,7 +318,13 @@ document.addEventListener("submit", (ev) => {
   const f = ev.target.closest("[data-form]"); if (!f) return; ev.preventDefault();
   const fn = FORMS[f.dataset.form]; if (fn) Promise.resolve(fn(f)).catch((e) => { console.error(e); toast(errMsg(e), "alert"); });
 });
-window.addEventListener("scroll", () => { const tb = document.getElementById("topbar"); if (tb) tb.classList.toggle("scrolled", scrollY > 8); }, { passive: true });
+let lastScrollY = 0;
+window.addEventListener("scroll", () => {
+  const y = scrollY; const tb = document.getElementById("topbar"); if (tb) tb.classList.toggle("scrolled", y > 8);
+  if (y > lastScrollY + 8 && y > 140) document.body.classList.add("bar-hidden");
+  else if (y < lastScrollY - 8 || y < 140) document.body.classList.remove("bar-hidden");
+  if (Math.abs(y - lastScrollY) > 8) lastScrollY = y;
+}, { passive: true });
 document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && UI.sheet) closeSheet(); });
 ["dragover", "dragleave", "drop"].forEach((type) => document.addEventListener(type, (ev) => {
   const dz = ev.target.closest?.("#dropzone"); if (!dz) return; ev.preventDefault();

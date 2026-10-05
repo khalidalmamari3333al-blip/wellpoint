@@ -251,3 +251,26 @@ STRINGS.en = {
   gov_muscat: "Muscat", gov_n_batinah: "North Al Batinah", gov_s_batinah: "South Al Batinah", gov_buraimi: "Al Buraimi", gov_dakhiliyah: "Al Dakhiliyah", gov_dhahirah: "Al Dhahirah", gov_n_sharqiyah: "North Al Sharqiyah", gov_s_sharqiyah: "South Al Sharqiyah", gov_dhofar: "Dhofar", gov_musandam: "Musandam", gov_wusta: "Al Wusta",
   sp_general: "General Medicine", sp_family: "Family Medicine", sp_internal: "Internal Medicine", sp_cardiology: "Cardiology", sp_endocrinology: "Endocrinology", sp_dermatology: "Dermatology", sp_dentistry: "Dentistry", sp_pediatrics: "Pediatrics", sp_orthopedics: "Orthopedics", sp_ent: "ENT", sp_ophthalmology: "Ophthalmology", sp_gynecology: "Gynecology", sp_urology: "Urology", sp_neurology: "Neurology", sp_psychiatry: "Psychiatry", sp_physiotherapy: "Physiotherapy", sp_gastro: "Gastroenterology"
 };
+Object.assign(STRINGS.en, {
+  rt_title: "Plan my medication times", rt_cta: "Plan around my routine",
+  rt_intro: "I'll ask a few quick questions about your day, then fit each medication around it. I won't change any dose, or how many times a day you take it.",
+  rt_q_wake: "What time do you usually wake up?", rt_q_breakfast: "When do you usually have breakfast?", rt_q_lunch: "And lunch?", rt_q_dinner: "And dinner?", rt_q_sleep: "What time do you usually go to bed?",
+  rt_q_busy: "Is there a time of day when it's hard to take medication, like work, school or driving?", rt_q_group: "Would you like fewer reminders, by grouping medications that can be taken together?",
+  rt_skip_meal: "I usually skip it", rt_no_busy: "No, any time works", rt_busy_from: "Busy from", rt_busy_to: "Until", rt_busy_invalid: "The end time should be after the start time.",
+  rt_yes_group: "Yes, fewer reminders", rt_no_group: "No, keep them separate",
+  rt_result_title: "Here's a schedule that fits your day", rt_result_d: "Times follow each prescription's frequency and food instructions. Check them before saving.",
+  rt_apply: "Save this schedule", rt_applied: "Schedule saved.", rt_edit_routine: "Change my answers", rt_no_meds: "Add a medication first, then I can plan it around your routine.",
+  tl_routine: "Medication times planned around your routine",
+  why_rt_meal_before: "30 minutes before {meal} ({time}), as instructed.", why_rt_meal_after: "Shortly after {meal} ({time}), as instructed.", why_rt_meal_with: "With {meal} ({time}), as instructed.",
+  why_rt_meal_skipped: "You skip {meal}, so it's placed at a usual time for that meal. Ask your pharmacist if that's okay.", why_rt_any: "No food instruction, so it's placed at a meal you already have, which makes it easy to remember.",
+  why_rt_busy: "Moved out of your busy hours.", why_rt_busy_kept: "This falls in your busy hours because it's tied to a meal. Keep the alarm on.", why_rt_grouped: "Grouped with another medication, so you get fewer reminders.",
+  why_rt_evening: "Kept in the evening, like your current reminder.", why_rt_spread: "Spread evenly across your waking hours.",
+  meal_breakfast: "breakfast", meal_lunch: "lunch", meal_dinner: "dinner",
+  clk_title: "Add to your phone's Clock", clk_d: "Wellpoint set each alarm's time and name. Your phone opens its Clock app so you can confirm the alarm.",
+  clk_android: "Clock (Android)", clk_ios: "Clock (iPhone)", clk_ios_setup: "iPhone: one-time setup", clk_ios_help: "In the Shortcuts app, create a shortcut named \"Wellpoint Alarm\": split the input text at \"|\", then use Create Alarm with the first part as the time and the second as the label. After that, each Clock (iPhone) button creates the alarm.",
+  clk_calendar: "Add daily reminders to Calendar", clk_calendar_d: "Works on any phone if Clock doesn't. Each dose repeats daily with an alert at the exact time.",
+  clk_label: "Alarm name", clk_note: "A website can't save Clock alarms by itself; the phone always asks you first. The Wellpoint mobile app would set them directly (AlarmManager on Android, AlarmKit on iPhone).", clk_btn: "Phone alarms",
+  alarm_settings: "Alarm settings", alarm_sound: "Alarm sound", alarm_vibrate: "Vibration", alarm_enable: "Allow alarm notifications", alarm_enabled: "Alarm notifications are on.",
+  alarm_denied: "Notifications are blocked here. The alarm still rings while Wellpoint is open, and you can add it to your Clock.", alarm_ringing: "Ringing until you respond",
+  alarm_os_note: "The alarm keeps ringing and vibrating until you choose an option. A website can only ring while it's open; add the alarm to your Clock to ring anytime."
+});
