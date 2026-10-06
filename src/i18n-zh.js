@@ -243,3 +243,31 @@ Object.assign(STRINGS.zh, {
   alarm_denied: "此处已阻止通知。Wellpoint 打开时闹钟仍会响铃，你也可以将其添加到时钟。", alarm_ringing: "持续响铃，直到你响应",
   alarm_os_note: "闹钟会持续响铃和振动，直到你选择一个选项。网页只有在打开时才能响铃；添加到手机时钟即可随时响铃。"
 });
+Object.assign(STRINGS.zh, {
+  trends: "趋势", trend_few: "再添加几次读数即可查看趋势。", trend_aria: "近 30 天{what}读数及你的常规范围",
+  tr_systolic: "收缩压", tr_diastolic: "舒张压", tr_glucose: "血糖", tr_usual: "你的常规范围",
+  tr_above: "最新读数高于你的常规范围（{r}）。", tr_below: "最新读数低于你的常规范围（{r}）。", tr_in: "最新读数在你的常规范围内（{r}）。",
+  tr_above_pill: "高于常规", tr_below_pill: "低于常规", tr_in_pill: "常规", tr_how: "“常规范围”是怎么算的？", tr_table: "以表格显示",
+  why_usual_range: "常规范围是你自己近 30 天读数的中间一半，反映你的平常状态。", why_usual_not_target: "它不是医疗目标，你的目标由医生设定。",
+  refill_soon: "{med} 大约 {n} 天后用完", refill_soon_d: "请到药房续药，或向诊所申请新处方。", refilled: "已续药（+{n}）", refill_saved: "库存已更新。",
+  days_left: "剩 {n} 天", pills_left: "现有药片数（可选）", pack_size: "每盒数量", supply_hint: "每次标记服药后 Wellpoint 会自动扣减，并在用完前 5 天提醒你。",
+  n_refill: "{med} 大约 {n} 天后用完，该续药了。", tl_refill: "已续药：{med}",
+  scan_title: "拍摄药盒或处方", scan_d: "拍张照片，Wellpoint AI 会填入印刷的内容，保存前由你核对。", scan_btn: "拍照或选择照片", scan_reading: "正在识别标签…",
+  scan_check: "已根据照片填写。保存前请逐项对照标签核对。", scan_unread: "标签上无法识别，保持原样：{list}。", scan_unavailable: "拍照识别需要 Wellpoint AI，此处不可用。请手动填写。",
+  scan_done: "标签已识别，请核对详情。", scan_none: "照片中未找到药品信息。", scan_failed: "无法识别该照片，请换一张更清晰、光线充足的照片。",
+  vp_title: "就诊摘要", vp_reason: "就诊原因", vp_adherence: "服药依从性（14 天）：{v}%", vp_latest: "最新", vp_usual: "常规 {r}", vp_n_readings: "{n} 次读数",
+  vp_checkins: "{n} 次打卡，其中 {w} 次比平时差", vp_symptoms: "反馈的症状", vp_questions: "想问医生的问题", vp_footer: "由患者在 Wellpoint 中根据自己的记录整理，并非临床文件。",
+  vp_prepare: "准备就诊摘要", vp_open_shared: "就诊摘要（已共享）", vp_intro: "自 {date} 以来的所有变化，一页呈现给医生。", vp_since: "自上次就诊以来", vp_q_ph: "添加问题",
+  vp_share: "发送给我的诊所", vp_reshare: "更新已共享的摘要", vp_shared_at: "{when}已共享", vp_no_consent: "请在设置中开启与诊所共享，才能发送此摘要。", vp_copy: "复制为文本", vp_shared: "摘要已发送给你的诊所。",
+  vp_from_patient: "患者提供的就诊摘要", tl_vp_shared: "已向 {clinic} 共享就诊摘要", au_vp_shared: "共享了就诊摘要",
+  fitness: "健身与表现", fitness_sub: "活动、恢复和训练负荷集中在一处。属于健康生活建议，并非医疗建议。",
+  fit_week_goal: "本周活动分钟数", fit_min_of: "{v} / {g} 分钟", fit_workouts_n: "{n} 次训练", fit_workouts: "训练", fit_steps_avg: "平均步数", fit_goal_of: "目标 {g}", fit_rest_hr: "静息心率", bpm: "次/分", fit_sleep_avg: "平均睡眠",
+  fit_readiness: "今日准备度", fit_ready: "可以训练", fit_ready_d: "睡眠与近期负荷平衡，正常或高强度训练都合适。",
+  fit_moderate: "适度训练", fit_moderate_d: "今天的训练轻一点或短一点，专注技术或柔韧性。", fit_recover: "优先恢复", fit_recover_d: "休息、散步、补水并早睡。如果身体不适，请暂停训练。",
+  why_fit_sleep_low: "昨晚睡了 {h} 小时，低于你近期平均的 {a} 小时。", why_fit_load: "过去一天训练负荷较高（{m} 努力分）。", why_fit_unwell: "你今天打卡时感觉比平时差。", why_fit_ok: "睡眠和训练负荷都在你的正常范围内。",
+  fit_activity_week: "本周每日活动分钟数", fit_log: "记录训练", fit_log_title: "记录训练", fit_type: "运动类型", fit_duration: "时长（分钟）", fit_intensity: "强度", fit_rpe_hint: "1 = 非常轻松，10 = 竭尽全力。",
+  fit_recent: "最近训练", fit_none: "还没有训练记录", fit_none_d: "记录一次训练，Wellpoint 会跟踪你的每周目标和恢复情况。", fit_goals: "目标", fit_goal_min: "每周活动分钟", fit_goal_steps: "每日步数", fit_saved: "训练已保存。", fit_goal_saved: "目标已更新。",
+  fit_who_note: "许多健康指南建议每周至少进行 150 分钟中等强度活动。", minutes_short: "分钟", m_steps: "步数", m_rhr: "静息心率", mode_fitness: "健身",
+  wt_run: "跑步", wt_walk: "步行", wt_football: "足球", wt_gym: "健身房", wt_swim: "游泳", wt_cycle: "骑行", wt_padel: "板式网球", wt_other: "其他", tl_workout: "训练：{type}，{min} 分钟",
+  demo_khalid_d: "健身档案 · 即将体检"
+});

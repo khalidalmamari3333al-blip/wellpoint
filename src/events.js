@@ -74,6 +74,20 @@ const ACTIONS = {
   "test-alarm": () => { const it = scheduleFor(PID()).find((i) => i.status !== "taken") || scheduleFor(PID())[0]; if (!it) return; showAlarm({ medId: it.med.id, time: it.time, key: "test" }); },
   "alarm-pref": (el) => { const pr = DB.profiles[App.user.id].prefs; pr[el.dataset.k] = pr[el.dataset.k] === false; saveDB(); render(); },
   "alarm-perm": async () => { if (!("Notification" in window)) { toast(t("alarm_denied"), "info"); return; } try { const r = await Notification.requestPermission(); toast(t(r === "granted" ? "alarm_enabled" : "alarm_denied"), r === "granted" ? "bell" : "info"); } catch { toast(t("alarm_denied"), "info"); } render(); },
+  "fit-log": () => { UI.wk = null; openSheet(workoutSheet); },
+  "wk-type": (el) => { UI.wk.type = el.dataset.v; UI.wk.min = +($("#wk-min")?.value || UI.wk.min); UI.wk.rpe = +($("#wk-rpe")?.value || UI.wk.rpe); renderLayer(); },
+  trend: (el) => { UI.trend = el.dataset.v; render(); },
+  refilled: (el) => { const m = DB.medications.find((x) => x.id === el.dataset.id); m.supply.left = (m.supply.left || 0) + (m.supply.pack || 30); DB.timeline.push({ id: uid("tl"), patientId: m.patientId, at: new Date().toISOString(), type: "medication", msg: { k: "tl_refill", p: { med: m.name } }, source: "patient" }); saveDB(); toast(t("refill_saved")); render(); },
+  "vp-q-add": (el) => { const a = DB.appointments.find((x) => x.id === UI.route.params.id); (a.questions ||= []).push(el.dataset.v); saveDB(); render(); },
+  "vp-q-del": (el) => { const a = DB.appointments.find((x) => x.id === UI.route.params.id); a.questions.splice(Number(el.dataset.i), 1); saveDB(); render(); },
+  "vp-copy": (el) => copyText(visitPackText(DB.appointments.find((x) => x.id === el.dataset.id))),
+  "vp-share": (el) => {
+    const a = DB.appointments.find((x) => x.id === el.dataset.id); const c = CLINICS.find((x) => x.id === a.clinicId);
+    if (!DB.profiles[a.patientId].consent?.shareWithClinics) { toast(t("vp_no_consent"), "lock"); return; }
+    a.pack = { at: new Date().toISOString(), text: visitPackText(a) };
+    DB.timeline.push({ id: uid("tl"), patientId: a.patientId, at: a.pack.at, type: "document", msg: { k: "tl_vp_shared", p: { clinic: c.name } }, source: "patient" });
+    audit("au_vp_shared", a.patientId); saveDB(); toast(t("vp_shared")); render();
+  },
   "clock-all": () => { const items = scheduleFor(PID()).map((i) => ({ med: i.med, time: i.time })); UI.clockItems = items; openSheet(() => clockSheet(items)); },
   "clock-ics": async () => {
     const ics = icsForDoses(UI.clockItems || []);
@@ -213,7 +227,9 @@ const FORMS = {
     if (!f.name.trim()) { toast(t("err_med_name"), "alert"); $("#m-name")?.focus(); return; }
     if (f.end && f.start && f.end < f.start) { toast(t("err_end_before"), "alert"); return; }
     const rec = { name: f.name.trim(), dose: f.dose.trim(), frequency: f.frequency, times: [...f.times].sort(), food: f.food, start: f.start, end: f.end, notes: f.notes, doctor: f.doctor, clinic: f.clinic };
-    if (f.id) { const m = DB.medications.find((x) => x.id === f.id); if (m.verified) { Object.assign(m, { times: rec.times, notes: rec.notes, end: rec.end }); } else Object.assign(m, rec); DB.timeline.push({ id: uid("tl"), patientId: pid, at: new Date().toISOString(), type: "medication", msg: { k: "tl_med_changed", p: { med: m.name } }, source: "patient" }); }
+    const sl = f.supplyLeft === "" || f.supplyLeft == null ? null : Math.max(0, Math.round(+f.supplyLeft)), sp = f.supplyPack === "" || f.supplyPack == null ? null : Math.max(1, Math.round(+f.supplyPack));
+    rec.supply = sl == null ? null : { left: sl, pack: sp || sl, perDose: 1 };
+    if (f.id) { const m = DB.medications.find((x) => x.id === f.id); if (m.verified) { Object.assign(m, { times: rec.times, notes: rec.notes, end: rec.end, supply: rec.supply }); } else Object.assign(m, rec); DB.timeline.push({ id: uid("tl"), patientId: pid, at: new Date().toISOString(), type: "medication", msg: { k: "tl_med_changed", p: { med: m.name } }, source: "patient" }); }
     else { DB.medications.push({ id: uid("med"), patientId: pid, ...rec, source: "patient", verified: false, active: true, createdAt: new Date().toISOString() }); DB.timeline.push({ id: uid("tl"), patientId: pid, at: new Date().toISOString(), type: "medication", msg: { k: "tl_med_added", p: { med: rec.name } }, source: "patient" }); notify(pid, "medications", { k: "n_med_added", p: { med: rec.name } }, { silent: true }); }
     saveDB(); UI.medForm = null; toast(t("saved")); back("meds");
   },
@@ -229,6 +245,15 @@ const FORMS = {
     if (bp || glucose) { const res = evaluateRules({ profile: PROF(), bp, glucose }); render(); $("#meas-result").innerHTML = levelCard(res, res.level === "green" ? "" : `<div><button class="btn sm" data-act="book-followup">${esc(t("book_followup"))}</button></div>`); }
     else { render(); toast(t("saved")); }
   },
+  workout: (form) => {
+    const min = Math.round(+form.querySelector("#wk-min").value), rpe = Math.round(+form.querySelector("#wk-rpe").value);
+    if (!(min >= 5 && min <= 600)) { toast(t("err_value_range"), "alert"); return; }
+    const pid = PID(); (DB.workouts ||= []).push({ id: uid("w"), patientId: pid, at: new Date().toISOString(), type: UI.wk.type, min, rpe, notes: "" });
+    DB.timeline.push({ id: uid("tl"), patientId: pid, at: new Date().toISOString(), type: "measure", msg: { k: "tl_workout", p: { type: { k: "wt_" + UI.wk.type }, min } }, source: "patient" });
+    saveDB(); closeSheet(); toast(t("fit_saved")); render();
+  },
+  "fit-goals": (form) => { const p = DB.profiles[PID()]; const a = +form.querySelector("#fg-min").value, b = +form.querySelector("#fg-steps").value; if (!(a >= 30 && b >= 1000)) { toast(t("err_value_range"), "alert"); return; } p.fitness = { goalMin: Math.round(a), goalSteps: Math.round(b) }; saveDB(); toast(t("fit_goal_saved")); render(); },
+  "vp-q": (form) => { const v = form.querySelector("#vp-q").value.trim(); if (!v) return; const a = DB.appointments.find((x) => x.id === UI.route.params.id); (a.questions ||= []).push(v); saveDB(); render(); setTimeout(() => $("#vp-q")?.focus(), 30); },
   chat(form) { const q = form.querySelector("#chat-in").value; form.querySelector("#chat-in").value = ""; askAI(q); },
   profile(form) {
     const f = UI.pf, me = DB.profiles[App.user.id];
@@ -281,6 +306,7 @@ document.addEventListener("click", (ev) => {
   Ring.unlock();
   const el = ev.target.closest("[data-go],[data-act]"); if (!el) return;
   if (el.dataset.act) {
+    if (el.dataset.act === "scrim" && ev.target !== el) return; // clicks inside a sheet are not backdrop clicks
     const fn = ACTIONS[el.dataset.act]; if (!fn) return;
     if (el.tagName === "A") return;
     ev.preventDefault(); Promise.resolve(fn(el, ev)).catch((e) => { console.error(e); toast(errMsg(e), "alert"); }); return;
@@ -299,7 +325,8 @@ document.addEventListener("click", (ev) => {
   if (r === "settings" && el.dataset.v) setTimeout(() => document.getElementById(el.dataset.v)?.scrollIntoView({ block: "start" }), 50);
 });
 document.addEventListener("input", (ev) => {
-  const el = ev.target; const b = el.dataset?.bind; if (!b) return;
+  const el = ev.target;
+  if (el.id === "wk-rpe") { const o = $("#wk-rpe-v"); if (o) o.textContent = el.value + "/10"; } const b = el.dataset?.bind; if (!b) return;
   const parts = b.split(".");
   if (parts.length >= 3 && /^\d+$/.test(parts.at(-1))) { getPath(UI, parts.slice(0, -1).join("."))[Number(parts.at(-1))] = el.value; }
   else setPath(UI, b, el.value);
@@ -313,6 +340,7 @@ document.addEventListener("change", (ev) => {
   if (ac === "pref-time") { DB.profiles[App.user.id].prefs[el.dataset.k] = el.value; saveDB(); toast(t("saved")); }
   if (ac === "doc-recat") { const d = DB.documents.find((x) => x.id === el.dataset.id); d.cat = el.value; saveDB(); toast(t("saved")); render(); }
   if (el.id === "doc-file" && el.files?.[0]) handleUpload(el.files[0]);
+  if (el.id === "scan-file" && el.files?.[0]) scanMedication(el.files[0]);
 });
 document.addEventListener("submit", (ev) => {
   const f = ev.target.closest("[data-form]"); if (!f) return; ev.preventDefault();
@@ -325,12 +353,47 @@ window.addEventListener("scroll", () => {
   else if (y < lastScrollY - 8 || y < 140) document.body.classList.remove("bar-hidden");
   if (Math.abs(y - lastScrollY) > 8) lastScrollY = y;
 }, { passive: true });
+document.addEventListener("pointermove", (ev) => trendHover(ev));
+document.addEventListener("pointerdown", (ev) => trendHover(ev));
+function trendHover(ev) {
+  const box = ev.target.closest?.(".trend");
+  $$(".trend").forEach((b) => { if (b !== box) { const tip = b.querySelector(".tip"); if (tip) tip.hidden = true; b.querySelector(".xhair")?.setAttribute("visibility", "hidden"); } });
+  if (!box) return;
+  const svg = box.querySelector("svg"), tip = box.querySelector(".tip"); const pts = JSON.parse(box.dataset.pts), names = JSON.parse(box.dataset.names);
+  const r = svg.getBoundingClientRect(); const vx = ((ev.clientX - r.left) / r.width) * svg.viewBox.baseVal.width;
+  let best = pts[0]; for (const p of pts) if (Math.abs(p.x - vx) < Math.abs(best.x - vx)) best = p;
+  const xh = box.querySelector(".xhair"); xh.setAttribute("x1", best.x); xh.setAttribute("x2", best.x); xh.setAttribute("visibility", "visible");
+  tip.innerHTML = `<b>${esc(best.d)}</b>${best.v.map((v, i) => `<span><i class="sw s${i + 1}"></i>${esc(names[i])} <b class="num">${fmtNum(v)}</b> ${esc(box.dataset.unit)}</span>`).join("")}<span class="xs faint">${esc(best.src)}</span>`;
+  tip.hidden = false; const px = (best.x / svg.viewBox.baseVal.width) * r.width; const w = tip.offsetWidth;
+  tip.style.left = Math.min(Math.max(px - w / 2, 0), r.width - w) + "px";
+}
 document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && UI.sheet) closeSheet(); });
 ["dragover", "dragleave", "drop"].forEach((type) => document.addEventListener(type, (ev) => {
   const dz = ev.target.closest?.("#dropzone"); if (!dz) return; ev.preventDefault();
   dz.classList.toggle("over", type === "dragover");
   if (type === "drop" && ev.dataTransfer.files[0]) handleUpload(ev.dataTransfer.files[0]);
 }));
+async function scanMedication(file) {
+  const f = UI.medForm; if (!f) return;
+  const sample = UI.aiLive ? await window.claude.use("sample").catch(() => null) : null;
+  const caps = sample ? await sample.limits().catch(() => null) : null;
+  if (!sample || !caps?.images) { toast(t("scan_unavailable"), "info"); return; }
+  f.scanning = true; render();
+  const prompt = `Read this photo of a medicine box, label or prescription. Reply with only JSON: {"name": string, "dose": string, "frequency": "once"|"twice"|"thrice"|"four"|"weekly"|"as_needed"|"", "food": "before"|"after"|"with"|"any"|"", "notes": string}.
+Rules: copy ONLY what is printed. Never guess or infer a dose or frequency; use "" for anything not clearly printed. "dose" is the strength and amount per dose as printed (e.g. "500 mg · 1 tablet"). "notes" may hold other printed directions (max 120 chars). If the photo is not a medication, return all fields "".`;
+  try {
+    const r = await sample.json(prompt, { images: file, modelTier: "quick" });
+    const unread = [];
+    if (r?.name) f.name = String(r.name).slice(0, 80); else unread.push("med_name");
+    if (r?.dose) f.dose = String(r.dose).slice(0, 60); else unread.push("dose");
+    if (FREQ_COUNT[r?.frequency] != null) f.frequency = r.frequency; else unread.push("frequency");
+    if (["before", "after", "with", "any"].includes(r?.food)) f.food = r.food; else unread.push("food");
+    if (r?.notes) f.notes = String(r.notes).slice(0, 160);
+    f.scanned = { unread }; f.suggest = null;
+    toast(t(r?.name ? "scan_done" : "scan_none"), r?.name ? "sparkle" : "info");
+  } catch (e) { toast(t(e?.code === "image_rejected" ? "err_file_type" : "scan_failed"), "alert"); }
+  f.scanning = false; render();
+}
 function handleUpload(file) {
   if (!/^image\/|application\/pdf/.test(file.type)) { toast(t("err_file_type"), "alert"); return; }
   if (file.size > 1.5 * 1024 * 1024) { toast(t("err_file_size"), "alert"); return; }
@@ -351,7 +414,7 @@ async function boot() {
   const saved = safeStore.get("wellpoint.lang") || (navigator.language || "en").slice(0, 2);
   setLang(["en", "ar", "zh"].includes(saved) ? saved : "en");
   DB = loadDB();
-  if (!DB || DB.version !== 3) { await seedDB(); saveDB(); }
+  if (!DB || DB.version !== 4) { await seedDB(); saveDB(); }
   if (api.auth.restore()) { const p = DB.profiles[App.user.id]; if (p?.lang) setLang(p.lang); UI.route = { name: "home", params: {} }; }
   render();
   setInterval(reminderTick, 20000); setTimeout(reminderTick, 1500);

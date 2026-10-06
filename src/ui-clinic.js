@@ -112,7 +112,9 @@ function clinicPatientSheet(pid) {
   }
   return `<div class="stack"><div class="row"><div class="avatar">${esc(initials(patientName(pid)))}</div><div class="grow"><h3>${esc(patientName(pid))}</h3><p class="xs muted">${esc(t("visible_to_role", { role: t("sr_" + App.user.staffRole) }))}</p></div></div>
     <h4>${esc(t("tab_appts"))}</h4><div class="list">${appts.map((a) => `<div class="li"><span class="grow small">${esc(fmtDate(a.date))} ${esc(fmtTime(a.time))} · ${esc(t("sp_" + a.specialty))}</span>${statusPill(a.status)}</div>`).join("")}</div>
-    <h4>${esc(t("clinical_info"))}</h4>${clin}<p class="hint">${esc(t("access_logged"))}</p><button class="btn secondary" data-act="sheet-close">${esc(t("close"))}</button></div>`;
+    <h4>${esc(t("clinical_info"))}</h4>${clin}
+    ${(() => { const pk = appts.find((a) => a.pack); return pk && consent ? `<h4>${esc(t("vp_from_patient"))}</h4><p class="xs muted">${esc(fmtDate(pk.date))} · ${esc(relTime(pk.pack.at))}</p><pre class="vp-pre">${esc(pk.pack.text)}</pre>` : ""; })()}
+    <p class="hint">${esc(t("access_logged"))}</p><button class="btn secondary" data-act="sheet-close">${esc(t("close"))}</button></div>`;
 }
 function postVisitSheet(a) {
   return `<form class="stack" data-form="c-update" data-id="${a.id}" novalidate><h3>${esc(t("post_visit"))}</h3><p class="small muted">${esc(patientName(a.patientId))} · ${esc(fmtDate(a.date))}</p>

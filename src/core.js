@@ -93,7 +93,7 @@ function passwordIssues(pw) {
 }
 
 /* ---------- persistence ---------- */
-const DB_KEY = "wellpoint.db.v3";
+const DB_KEY = "wellpoint.db.v4";
 let DB = null;
 function saveDB() { safeStore.set(DB_KEY, JSON.stringify(DB)); }
 function loadDB() { const raw = safeStore.get(DB_KEY); if (!raw) return null; try { return JSON.parse(raw); } catch { return null; } }
@@ -121,9 +121,9 @@ function nextAvailable(doc, from = today(), span = 14) {
 async function seedDB() {
   const T = today();
   const db = {
-    version: 3, users: [], profiles: {}, appointments: [], medications: [], doseLog: [], checkins: [], measurements: [], timeline: [],
+    version: 4, users: [], profiles: {}, appointments: [], medications: [], doseLog: [], checkins: [], measurements: [], timeline: [],
     notifications: [], emails: [], documents: [], caregivers: [], audit: [], journal: [], messages: [], sessions: [], clinicEdits: {},
-    integrations: {}, staff: [], pendingCodes: {}
+    integrations: {}, staff: [], pendingCodes: {}, workouts: []
   };
   const mk = async (u, pw) => { const h = await hashPassword(pw); db.users.push({ verified: true, createdAt: new Date().toISOString(), ...u, pw: h.hash, salt: h.salt }); };
   await mk({ id: "u_khalid", email: "khalid@demo.wellpoint.om", phone: "+96890000001", role: "patient", name: "Khalid" }, "Wellpoint1");
@@ -140,7 +140,7 @@ async function seedDB() {
     onboarded: true, name: "Khalid", dob: `${new Date().getFullYear() - 18}-03-14`, gender: "male", weight: 72, height: 175, nationality: "Omani", gov: "muscat", lang: "en",
     emergency: { name: "Salim (father)", phone: "+968 9000 0010" }, goals: ["general", "sleep", "fitness"], conditions: ["none"], allergies: ["Penicillin"],
     primaryClinic: "starcare", caregiverWanted: false, consent: { shareWithClinics: true, shareWithCaregivers: false, research: false },
-    prefs: { ...basePrefs, wake: "07:00", sleep: "23:30" }, mode: "general", simple: false, plan: "free", devices: ["health_connect"]
+    prefs: { ...basePrefs, wake: "07:00", sleep: "23:30" }, mode: "fitness", fitness: { goalMin: 150, goalSteps: 8000 }, simple: false, plan: "free", devices: ["health_connect"]
   };
   db.profiles.u_aisha = {
     onboarded: true, name: "Aisha Al Saadi", dob: "1961-06-02", gender: "female", weight: 78, height: 158, nationality: "Omani", gov: "muscat", lang: "ar",
@@ -168,23 +168,32 @@ async function seedDB() {
   });
 
   const med = (o) => db.medications.push({ id: uid("med"), active: true, notes: "", createdAt: new Date().toISOString(), ...o });
-  med({ patientId: "u_khalid", name: "Vitamin D3", dose: "1000 IU · 1 tablet", frequency: "once", times: ["08:30"], food: "after", start: addDays(T, -30), end: addDays(T, 60), doctor: "d1", clinic: "starcare", source: "patient", verified: false, notes: "Demo supplement entry" });
-  med({ patientId: "u_aisha", name: "Metformin", dose: "500 mg · 1 tablet", frequency: "twice", times: ["07:00", "19:00"], food: "after", start: addDays(T, -12), end: "", doctor: "d9", clinic: "kims", source: "clinic", verified: true, notes: "Demo prescription from clinic record" });
-  med({ patientId: "u_aisha", name: "Amlodipine", dose: "5 mg · 1 tablet", frequency: "once", times: ["07:00"], food: "any", start: addDays(T, -90), end: "", doctor: "d10", clinic: "kims", source: "clinic", verified: true, notes: "Demo prescription" });
+  med({ patientId: "u_khalid", name: "Vitamin D3", dose: "1000 IU · 1 tablet", frequency: "once", times: ["08:30"], food: "after", start: addDays(T, -30), end: addDays(T, 60), doctor: "d1", clinic: "starcare", source: "patient", verified: false, notes: "Demo supplement entry", supply: { left: 52, pack: 60, perDose: 1 } });
+  med({ patientId: "u_aisha", name: "Metformin", dose: "500 mg · 1 tablet", frequency: "twice", times: ["07:00", "19:00"], food: "after", start: addDays(T, -12), end: "", doctor: "d9", clinic: "kims", source: "clinic", verified: true, notes: "Demo prescription from clinic record", supply: { left: 9, pack: 60, perDose: 1 } });
+  med({ patientId: "u_aisha", name: "Amlodipine", dose: "5 mg · 1 tablet", frequency: "once", times: ["07:00"], food: "any", start: addDays(T, -90), end: "", doctor: "d10", clinic: "kims", source: "clinic", verified: true, notes: "Demo prescription", supply: { left: 24, pack: 30, perDose: 1 } });
   med({ patientId: "u_aisha", name: "Atorvastatin", dose: "20 mg · 1 tablet", frequency: "once", times: ["21:00"], food: "any", start: addDays(T, -90), end: "", doctor: "d10", clinic: "kims", source: "clinic", verified: true, notes: "Demo prescription" });
   // adherence history (last 7 days)
-  for (const m of db.medications) for (let i = 1; i <= 7; i++) for (const tm of m.times) {
+  for (const m of db.medications) for (let i = 1; i <= 14; i++) for (const tm of m.times) {
     const miss = hashStr(m.id + i + tm) % 17 === 0;
     db.doseLog.push({ id: uid("dl"), medId: m.id, patientId: m.patientId, date: addDays(T, -i), time: tm, status: miss ? "missed" : "taken", at: addDays(T, -i) + "T" + tm });
   }
 
   const meas = (o) => db.measurements.push({ id: uid("ms"), ...o });
   for (let i = 1; i <= 7; i++) meas({ patientId: "u_khalid", type: "sleep", value: [7.4, 6.1, 5.6, 6.0, 7.8, 5.4, 6.2][i - 1], at: addDays(T, -i) + "T07:00", source: "device" });
+  for (let i = 0; i <= 13; i++) {
+    meas({ patientId: "u_khalid", type: "steps", value: [9420, 7310, 11870, 6020, 8840, 12650, 5480, 9930, 7710, 10450, 6890, 8210, 13020, 7450][i], at: addDays(T, -i) + "T21:00", source: "device" });
+    if (i % 3 === 0) meas({ patientId: "u_khalid", type: "rhr", value: [58, 60, 57, 59, 61][i / 3], at: addDays(T, -i) + "T06:30", source: "device" });
+  }
+  [[0, "gym", 45, 7], [1, "football", 75, 8], [3, "run", 30, 6], [4, "walk", 40, 3], [6, "football", 90, 8], [8, "gym", 50, 7], [10, "swim", 35, 6], [12, "run", 25, 5]].forEach(([d, type, min, rpe]) => db.workouts.push({ id: uid("w"), patientId: "u_khalid", at: addDays(T, -d) + "T18:00", type, min, rpe, notes: "" }));
   meas({ patientId: "u_khalid", type: "weight", value: 72, at: addDays(T, -9) + "T08:00", source: "patient" });
   meas({ patientId: "u_aisha", type: "bp", value: 138, value2: 86, at: addDays(T, -12) + "T09:10", source: "clinic" });
   meas({ patientId: "u_aisha", type: "glucose", value: 142, at: addDays(T, -12) + "T09:10", source: "clinic", unit: "mg/dL" });
   meas({ patientId: "u_aisha", type: "bp", value: 134, value2: 84, at: addDays(T, -5) + "T07:30", source: "caregiver" });
   meas({ patientId: "u_aisha", type: "glucose", value: 131, at: addDays(T, -6) + "T07:15", source: "patient", unit: "mg/dL" });
+  [[29, 132, 83, 128], [26, 136, 85, 139], [23, 130, 82, 124], [20, 138, 87, 147], [17, 133, 84, 131], [15, 129, 81, 126], [10, 135, 85, 136], [8, 131, 82, 129], [3, 142, 89, 151], [2, 139, 88, 144]].forEach(([d, sy, di, g]) => {
+    meas({ patientId: "u_aisha", type: "bp", value: sy, value2: di, at: addDays(T, -d) + "T07:20", source: d % 2 ? "patient" : "caregiver" });
+    meas({ patientId: "u_aisha", type: "glucose", value: g, at: addDays(T, -d) + "T07:05", source: "patient", unit: "mg/dL" });
+  });
   meas({ patientId: "u_aisha", type: "hba1c", value: 7.4, at: addDays(T, -12) + "T09:10", source: "clinic", unit: "%" });
 
   db.checkins.push({ id: uid("ci"), patientId: "u_aisha", at: addDays(T, -4) + "T10:00", mood: "same", symptoms: [], level: "green", by: "patient" });
@@ -539,7 +548,13 @@ function logDose(medId, time, status, dateIso = today()) {
   if (!sc.all && !sc.meds) throw { code: "err_forbidden" };
   let log = DB.doseLog.find((d) => d.medId === medId && d.date === dateIso && d.time === time);
   if (!log) { log = { id: uid("dl"), medId, patientId: m.patientId, date: dateIso, time }; DB.doseLog.push(log); }
+  const was = log.status;
   log.status = status; log.at = new Date().toISOString(); log.by = App.user.id;
+  if (status === "taken" && was !== "taken" && m.supply?.left != null) {
+    m.supply.left = Math.max(0, m.supply.left - (m.supply.perDose || 1));
+    const d = supplyDays(m);
+    if (d != null && d <= 5) notify(m.patientId, "medications", { k: "n_refill", p: { med: m.name, n: d } }, { silent: true });
+  }
   if (App.user.role === "caregiver") { audit("au_caregiver_dose", m.patientId); notify(m.patientId, "caregiver", { k: "n_cg_marked", p: { name: App.user.name.split(" ")[0], med: m.name } }, { silent: true }); }
   saveDB();
 }
@@ -565,6 +580,8 @@ function aiContext(patientId) {
     lines.push("Recent check-ins: " + DB.checkins.filter((c) => c.patientId === patientId).slice(-5).map((c) => `${c.at.slice(0, 10)} ${c.mood} ${c.symptoms.join(",")} level=${c.level}`).join("; "));
     lines.push("Journal: " + DB.journal.filter((j) => j.patientId === patientId).slice(-6).map((j) => `${j.at.slice(0, 10)} [${j.tags.join(",")}] ${j.text}`).join("; "));
     lines.push("Timeline: " + DB.timeline.filter((x) => x.patientId === patientId).sort((a, b) => (a.at < b.at ? 1 : -1)).slice(0, 8).map((x) => `${x.at.slice(0, 10)} ${tx(x.msg)}`).join("; "));
+    const wk = (DB.workouts || []).filter((w) => w.patientId === patientId).slice(-8);
+    if (wk.length) lines.push("Workouts: " + wk.map((w) => `${w.at.slice(0, 10)} ${w.type} ${w.min}min RPE${w.rpe}`).join("; ") + `. Active minutes this week: ${fitnessWeek(patientId).min}/${(DB.profiles[patientId].fitness || {}).goalMin || 150}.`);
     lines.push("Data freshness: " + freshness(patientId).rows.map((r) => `${r.key}: ${r.days == null ? "never" : r.days + " days ago"}`).join("; "));
   }
   return lines.join("\n");
@@ -728,3 +745,81 @@ const Ring = {
     try { this.lock?.release(); } catch {} this.lock = null;
   }
 };
+
+/* ---------- refill tracking ---------- */
+function supplyDays(m) {
+  if (!m.supply || m.supply.left == null) return null;
+  const perDay = (m.frequency === "weekly" ? 1 / 7 : FREQ_COUNT[m.frequency] || 0) * (m.supply.perDose || 1);
+  return perDay ? Math.floor(m.supply.left / perDay) : null;
+}
+
+/* ---------- personal baseline ("your usual range") ---------- */
+function usualRange(vals) {
+  if (vals.length < 4) return null;
+  const v = [...vals].sort((a, b) => a - b); const q = (p) => { const i = (v.length - 1) * p, lo = Math.floor(i), hi = Math.ceil(i); return v[lo] + (v[hi] - v[lo]) * (i - lo); };
+  return [Math.round(q(0.25)), Math.round(q(0.75))];
+}
+function trendSeries(pid, type, days = 30) {
+  const pts = DB.measurements.filter((m) => m.patientId === pid && m.type === type && daysBetween(m.at.slice(0, 10), today()) <= days).sort((a, b) => (a.at > b.at ? 1 : -1));
+  if (type === "bp") return { pts, series: [{ key: "systolic", get: (m) => m.value, cls: "s1" }, { key: "diastolic", get: (m) => m.value2, cls: "s2" }], unit: "mmHg" };
+  return { pts, series: [{ key: type, get: (m) => m.value, cls: "s1" }], unit: type === "glucose" ? "mg/dL" : "" };
+}
+
+/* ---------- visit summary ("visit pack") ---------- */
+function visitPack(apt) {
+  const pid = apt.patientId, p = DB.profiles[pid];
+  const last = DB.appointments.filter((a) => a.patientId === pid && a.status === "completed" && a.date < apt.date).sort((a, b) => (a.date < b.date ? 1 : -1))[0];
+  const since = last?.date || addDays(today(), -30);
+  const meds = DB.medications.filter((m) => m.patientId === pid && m.active);
+  const readings = ["bp", "glucose"].map((type) => {
+    const { pts, series } = trendSeries(pid, type, 60); if (!pts.length) return null;
+    const lastPt = pts.at(-1); const ranges = series.map((s) => usualRange(pts.map(s.get)));
+    return { type, latest: type === "bp" ? `${lastPt.value}/${lastPt.value2}` : String(lastPt.value), at: lastPt.at, n: pts.length, range: ranges[0] ? (type === "bp" ? `${ranges[0].join("–")} / ${ranges[1].join("–")}` : ranges[0].join("–")) : null };
+  }).filter(Boolean);
+  const checkins = DB.checkins.filter((c) => c.patientId === pid && c.at.slice(0, 10) >= since);
+  const symptoms = {}; checkins.forEach((c) => c.symptoms.forEach((s) => (symptoms[s] = (symptoms[s] || 0) + 1)));
+  return {
+    since, meds: meds.map((m) => ({ name: m.name, dose: m.dose, freq: m.frequency, food: m.food, verified: m.verified, days: supplyDays(m) })),
+    adherence: adherence(pid, 14), readings, checkins: checkins.length, worse: checkins.filter((c) => c.mood === "worse").length, symptoms,
+    allergies: p.allergies || [], conditions: (p.conditions || []).filter((c) => !["none", "prefer_not"].includes(c)), questions: apt.questions || []
+  };
+}
+function visitPackText(apt) {
+  const v = visitPack(apt); const c = CLINICS.find((x) => x.id === apt.clinicId); const p = DB.profiles[apt.patientId];
+  const L = [];
+  L.push(t("vp_title") + " — " + p.name, `${fmtDate(apt.date, { weekday: "long", day: "numeric", month: "long" })} · ${fmtTime(apt.time)} · ${clinicName(c)}`, "");
+  if (apt.notes) L.push(t("vp_reason") + ": " + apt.notes);
+  if (v.conditions.length) L.push(t("conditions") + ": " + v.conditions.map((x) => t("cond_" + x)).join(", "));
+  L.push(t("allergies") + ": " + (v.allergies.join(", ") || t("none_recorded")), "");
+  L.push(t("my_meds") + ":"); v.meds.forEach((m) => L.push(`• ${m.name} ${m.dose || ""} · ${t("freq_" + m.freq)} · ${t("food_" + m.food)}${m.verified ? "" : " (" + t("self_entered") + ")"}`));
+  if (v.adherence != null) L.push(t("vp_adherence", { v: v.adherence }));
+  L.push("");
+  v.readings.forEach((r) => L.push(`${t("m_" + r.type)}: ${t("vp_latest")} ${r.latest} (${fmtDate(r.at.slice(0, 10))}) · ${r.range ? t("vp_usual", { r: r.range }) : ""} · ${t("vp_n_readings", { n: r.n })}`));
+  L.push(t("vp_checkins", { n: v.checkins, w: v.worse }));
+  const sy = Object.entries(v.symptoms); if (sy.length) L.push(t("vp_symptoms") + ": " + sy.map(([k, n]) => `${t("sym_" + k)} ×${n}`).join(", "));
+  if (v.questions.length) { L.push("", t("vp_questions") + ":"); v.questions.forEach((q) => L.push("• " + q)); }
+  L.push("", t("vp_footer"));
+  return L.join("\n");
+}
+
+/* ---------- fitness & performance (wellness guidance, not medical) ---------- */
+function fitnessWeek(pid) {
+  const since = addDays(today(), -6);
+  const w = (DB.workouts || []).filter((x) => x.patientId === pid && x.at.slice(0, 10) >= since);
+  const days = Array.from({ length: 7 }, (_, i) => { const d = addDays(today(), i - 6); return { d, min: w.filter((x) => x.at.slice(0, 10) === d).reduce((a, b) => a + b.min, 0) }; });
+  return { workouts: w, min: w.reduce((a, b) => a + b.min, 0), days };
+}
+function readiness(pid) {
+  const reasons = []; let score = 0;
+  const sleep = DB.measurements.filter((m) => m.patientId === pid && m.type === "sleep").sort((a, b) => (a.at > b.at ? 1 : -1));
+  const last = sleep.at(-1), avg = sleep.length > 2 ? sleep.slice(-8, -1).reduce((a, b) => a + b.value, 0) / Math.max(1, sleep.slice(-8, -1).length) : null;
+  if (last && (last.value < 6 || (avg && last.value < avg - 1))) { score--; reasons.push({ k: "why_fit_sleep_low", p: { h: fmtNum(last.value, { maximumFractionDigits: 1 }), a: avg ? fmtNum(avg, { maximumFractionDigits: 1 }) : "—" } }); }
+  const y = addDays(today(), -1);
+  const load = (DB.workouts || []).filter((w) => w.patientId === pid && w.at.slice(0, 10) >= y).reduce((a, b) => a + b.min * b.rpe, 0);
+  if (load >= 450) { score--; reasons.push({ k: "why_fit_load", p: { m: fmtNum(load) } }); }
+  const ci = DB.checkins.find((c) => c.patientId === pid && c.at.slice(0, 10) === today());
+  if (ci?.mood === "worse") { score -= 2; reasons.push({ k: "why_fit_unwell" }); }
+  if (!reasons.length) reasons.push({ k: "why_fit_ok" });
+  reasons.push({ k: "why_wellness_only" });
+  return { level: score >= 0 ? "ready" : score === -1 ? "moderate" : "recover", reasons };
+}

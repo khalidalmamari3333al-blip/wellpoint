@@ -274,3 +274,31 @@ Object.assign(STRINGS.en, {
   alarm_denied: "Notifications are blocked here. The alarm still rings while Wellpoint is open, and you can add it to your Clock.", alarm_ringing: "Ringing until you respond",
   alarm_os_note: "The alarm keeps ringing and vibrating until you choose an option. A website can only ring while it's open; add the alarm to your Clock to ring anytime."
 });
+Object.assign(STRINGS.en, {
+  trends: "Trends", trend_few: "Add a few more readings to see a trend.", trend_aria: "{what} readings over the last 30 days with your usual range",
+  tr_systolic: "Systolic", tr_diastolic: "Diastolic", tr_glucose: "Glucose", tr_usual: "Your usual range",
+  tr_above: "Your latest reading is above your usual range ({r}).", tr_below: "Your latest reading is below your usual range ({r}).", tr_in: "Your latest reading is within your usual range ({r}).",
+  tr_above_pill: "Above usual", tr_below_pill: "Below usual", tr_in_pill: "Usual", tr_how: "How is \"usual range\" worked out?", tr_table: "Show as table",
+  why_usual_range: "Your usual range is the middle half of your own readings from the last 30 days, so it reflects your normal pattern.", why_usual_not_target: "It is not a medical target. Your doctor sets your targets.",
+  refill_soon: "{med} runs out in about {n} days", refill_soon_d: "Order a refill from your pharmacy or ask your clinic for a new prescription.", refilled: "I refilled (+{n})", refill_saved: "Supply updated.",
+  days_left: "{n} days left", pills_left: "Pills on hand (optional)", pack_size: "Pack size", supply_hint: "Wellpoint counts down as you mark doses taken and reminds you 5 days before you run out.",
+  n_refill: "{med} runs out in about {n} days. Time to refill.", tl_refill: "Refilled {med}",
+  scan_title: "Scan the box or prescription", scan_d: "Take a photo and Wellpoint AI fills in what's printed. You check it before saving.", scan_btn: "Take or choose a photo", scan_reading: "Reading the label…",
+  scan_check: "Filled from your photo. Check every field against the label before saving.", scan_unread: "Not readable on the label, so left as is: {list}.", scan_unavailable: "Scanning needs Wellpoint AI, which isn't available here. Enter the details by hand.",
+  scan_done: "Label read. Please check the details.", scan_none: "No medication details found in that photo.", scan_failed: "Couldn't read that photo. Try a clearer, well-lit picture.",
+  vp_title: "Visit summary", vp_reason: "Reason for visit", vp_adherence: "Medication adherence (14 days): {v}%", vp_latest: "latest", vp_usual: "usual {r}", vp_n_readings: "{n} readings",
+  vp_checkins: "{n} check-ins, {w} worse than usual", vp_symptoms: "Reported symptoms", vp_questions: "Questions for my doctor", vp_footer: "Prepared by the patient in Wellpoint from their own records. Not a clinical document.",
+  vp_prepare: "Prepare visit summary", vp_open_shared: "Visit summary (shared)", vp_intro: "Everything that changed since {date}, on one page for your doctor.", vp_since: "Since your last visit", vp_q_ph: "Add a question",
+  vp_share: "Share with my clinic", vp_reshare: "Update shared summary", vp_shared_at: "Shared {when}", vp_no_consent: "Turn on sharing with clinics in Settings to send this summary.", vp_copy: "Copy as text", vp_shared: "Summary shared with your clinic.",
+  vp_from_patient: "Visit summary from patient", tl_vp_shared: "Visit summary shared with {clinic}", au_vp_shared: "shared a visit summary",
+  fitness: "Fitness & performance", fitness_sub: "Activity, recovery and training load in one place. Wellness guidance, not medical advice.",
+  fit_week_goal: "Active minutes this week", fit_min_of: "{v} of {g} min", fit_workouts_n: "{n} workouts", fit_workouts: "Workouts", fit_steps_avg: "Average steps", fit_goal_of: "goal {g}", fit_rest_hr: "Resting heart rate", bpm: "bpm", fit_sleep_avg: "Average sleep",
+  fit_readiness: "Today's readiness", fit_ready: "Ready to train", fit_ready_d: "Sleep and recent load look balanced. A normal or harder session should feel fine.",
+  fit_moderate: "Train moderately", fit_moderate_d: "Keep today's session lighter or shorter, and focus on technique or mobility.", fit_recover: "Prioritize recovery", fit_recover_d: "Rest, walk, hydrate and sleep early. If you feel unwell, skip training.",
+  why_fit_sleep_low: "Last night's sleep was {h} h, below your recent average of {a} h.", why_fit_load: "High training load in the last day ({m} effort points).", why_fit_unwell: "You checked in as feeling worse than usual today.", why_fit_ok: "Sleep and training load are within your normal pattern.",
+  fit_activity_week: "Active minutes per day this week", fit_log: "Log a workout", fit_log_title: "Log a workout", fit_type: "Activity", fit_duration: "Duration (minutes)", fit_intensity: "Effort", fit_rpe_hint: "1 = very easy, 10 = maximum effort.",
+  fit_recent: "Recent workouts", fit_none: "No workouts yet", fit_none_d: "Log a session and Wellpoint tracks your weekly goal and recovery.", fit_goals: "Goals", fit_goal_min: "Weekly active minutes", fit_goal_steps: "Daily steps", fit_saved: "Workout saved.", fit_goal_saved: "Goals updated.",
+  fit_who_note: "Many health guidelines suggest at least 150 minutes of moderate activity a week.", minutes_short: "min", m_steps: "Steps", m_rhr: "Resting heart rate", mode_fitness: "Fitness",
+  wt_run: "Run", wt_walk: "Walk", wt_football: "Football", wt_gym: "Gym", wt_swim: "Swim", wt_cycle: "Cycling", wt_padel: "Padel", wt_other: "Other", tl_workout: "Workout: {type}, {min} min",
+  demo_khalid_d: "Fitness profile · upcoming check-up"
+});

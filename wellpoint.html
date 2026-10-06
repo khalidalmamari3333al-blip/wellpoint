@@ -18,6 +18,8 @@
   --accent: #3C619B;
   --accent-ink: #FFFFFF;
   --accent-soft: #E5ECF7;
+  --s1: #2F5FB0;
+  --s2: #B0457F;
   --good: #3B8466;
   --good-soft: #E3F1EA;
   --warn: #A96F14;
@@ -45,7 +47,7 @@
   :root:not([data-theme="light"]) {
     --bg: #0B1018; --bg-2: #0F1520; --surface: #131A26; --surface-2: #1A2332;
     --ink: #E7ECF4; --ink-2: #A8B2C4; --ink-3: #737E93; --line: #232D3E;
-    --accent: #86A7DB; --accent-ink: #0B1018; --accent-soft: #1B2940;
+    --accent: #86A7DB; --accent-ink: #0B1018; --accent-soft: #1B2940; --s1: #5B86D6; --s2: #D0629F;
     --good: #6CBB96; --good-soft: #13281F; --warn: #E3AA52; --warn-soft: #2C2213;
     --bad: #E57E73; --bad-soft: #321819;
     --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
@@ -57,7 +59,7 @@
 :root[data-theme="dark"] {
   --bg: #0B1018; --bg-2: #0F1520; --surface: #131A26; --surface-2: #1A2332;
   --ink: #E7ECF4; --ink-2: #A8B2C4; --ink-3: #737E93; --line: #232D3E;
-  --accent: #86A7DB; --accent-ink: #0B1018; --accent-soft: #1B2940;
+  --accent: #86A7DB; --accent-ink: #0B1018; --accent-soft: #1B2940; --s1: #5B86D6; --s2: #D0629F;
   --good: #6CBB96; --good-soft: #13281F; --warn: #E3AA52; --warn-soft: #2C2213;
   --bad: #E57E73; --bad-soft: #321819;
   --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
@@ -467,6 +469,24 @@ html { scroll-padding-top: 76px; }
 @keyframes bell-shake { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(14deg); } 30% { transform: rotate(-12deg); } 45% { transform: rotate(8deg); } 60% { transform: rotate(-5deg); } 75% { transform: rotate(2deg); } }
 .alarm-bell .ico { animation: bell-shake 1.3s var(--ease) infinite; transform-origin: 50% 10%; }
 @media (prefers-reduced-motion: reduce) { .ringing, .alarm-bell .ico { animation: none; } }
+
+/* ---------- trend chart ---------- */
+.trend { position: relative; touch-action: pan-y; }
+.trend svg { width: 100%; height: auto; display: block; overflow: visible; direction: ltr; }
+.trend .grid { stroke: var(--line); stroke-width: 1; }
+.trend .axis { fill: var(--ink-3); font-size: 10px; font-family: var(--font-body); }
+.trend .line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.trend .line.s1, .trend .dot.s1 { stroke: var(--s1); } .trend .line.s2, .trend .dot.s2 { stroke: var(--s2); }
+.trend .dot { fill: var(--s1); stroke: var(--surface) !important; stroke-width: 2; } .trend .dot.s1 { fill: var(--s1); } .trend .dot.s2 { fill: var(--s2); }
+.trend .band { opacity: .13; } .trend .band.s1 { fill: var(--s1); } .trend .band.s2 { fill: var(--s2); }
+.trend .dlabel { fill: var(--ink-2); font-size: 10.5px; font-weight: 650; font-family: var(--font-body); }
+.trend .xhair { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 3 3; }
+.trend .tip { position: absolute; top: -6px; transform: translateY(-100%); display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-lift); font-size: 12px; white-space: nowrap; pointer-events: none; z-index: 3; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: var(--fs-xs); color: var(--ink-2); font-weight: 600; }
+.legend span, .trend .tip span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; background: var(--s1); } .sw.s2 { background: var(--s2); }
+.sw.band-sw { background: color-mix(in srgb, var(--s1) 18%, transparent); border: 1px dashed var(--s1); }
+.vp-pre { white-space: pre-wrap; font-family: var(--font-body); font-size: 12.5px; line-height: 1.55; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; max-height: 40vh; overflow: auto; }
 </style>
 <div id="app"><div style="padding:40px 16px;text-align:center;font-family:system-ui">Loading Wellpoint…</div></div><div id="layer"></div><div id="toasts" class="toast-wrap" aria-live="polite"></div>
 <script>
@@ -861,6 +881,34 @@ Object.assign(STRINGS.en, {
   alarm_denied: "Notifications are blocked here. The alarm still rings while Wellpoint is open, and you can add it to your Clock.", alarm_ringing: "Ringing until you respond",
   alarm_os_note: "The alarm keeps ringing and vibrating until you choose an option. A website can only ring while it's open; add the alarm to your Clock to ring anytime."
 });
+Object.assign(STRINGS.en, {
+  trends: "Trends", trend_few: "Add a few more readings to see a trend.", trend_aria: "{what} readings over the last 30 days with your usual range",
+  tr_systolic: "Systolic", tr_diastolic: "Diastolic", tr_glucose: "Glucose", tr_usual: "Your usual range",
+  tr_above: "Your latest reading is above your usual range ({r}).", tr_below: "Your latest reading is below your usual range ({r}).", tr_in: "Your latest reading is within your usual range ({r}).",
+  tr_above_pill: "Above usual", tr_below_pill: "Below usual", tr_in_pill: "Usual", tr_how: "How is \"usual range\" worked out?", tr_table: "Show as table",
+  why_usual_range: "Your usual range is the middle half of your own readings from the last 30 days, so it reflects your normal pattern.", why_usual_not_target: "It is not a medical target. Your doctor sets your targets.",
+  refill_soon: "{med} runs out in about {n} days", refill_soon_d: "Order a refill from your pharmacy or ask your clinic for a new prescription.", refilled: "I refilled (+{n})", refill_saved: "Supply updated.",
+  days_left: "{n} days left", pills_left: "Pills on hand (optional)", pack_size: "Pack size", supply_hint: "Wellpoint counts down as you mark doses taken and reminds you 5 days before you run out.",
+  n_refill: "{med} runs out in about {n} days. Time to refill.", tl_refill: "Refilled {med}",
+  scan_title: "Scan the box or prescription", scan_d: "Take a photo and Wellpoint AI fills in what's printed. You check it before saving.", scan_btn: "Take or choose a photo", scan_reading: "Reading the label…",
+  scan_check: "Filled from your photo. Check every field against the label before saving.", scan_unread: "Not readable on the label, so left as is: {list}.", scan_unavailable: "Scanning needs Wellpoint AI, which isn't available here. Enter the details by hand.",
+  scan_done: "Label read. Please check the details.", scan_none: "No medication details found in that photo.", scan_failed: "Couldn't read that photo. Try a clearer, well-lit picture.",
+  vp_title: "Visit summary", vp_reason: "Reason for visit", vp_adherence: "Medication adherence (14 days): {v}%", vp_latest: "latest", vp_usual: "usual {r}", vp_n_readings: "{n} readings",
+  vp_checkins: "{n} check-ins, {w} worse than usual", vp_symptoms: "Reported symptoms", vp_questions: "Questions for my doctor", vp_footer: "Prepared by the patient in Wellpoint from their own records. Not a clinical document.",
+  vp_prepare: "Prepare visit summary", vp_open_shared: "Visit summary (shared)", vp_intro: "Everything that changed since {date}, on one page for your doctor.", vp_since: "Since your last visit", vp_q_ph: "Add a question",
+  vp_share: "Share with my clinic", vp_reshare: "Update shared summary", vp_shared_at: "Shared {when}", vp_no_consent: "Turn on sharing with clinics in Settings to send this summary.", vp_copy: "Copy as text", vp_shared: "Summary shared with your clinic.",
+  vp_from_patient: "Visit summary from patient", tl_vp_shared: "Visit summary shared with {clinic}", au_vp_shared: "shared a visit summary",
+  fitness: "Fitness & performance", fitness_sub: "Activity, recovery and training load in one place. Wellness guidance, not medical advice.",
+  fit_week_goal: "Active minutes this week", fit_min_of: "{v} of {g} min", fit_workouts_n: "{n} workouts", fit_workouts: "Workouts", fit_steps_avg: "Average steps", fit_goal_of: "goal {g}", fit_rest_hr: "Resting heart rate", bpm: "bpm", fit_sleep_avg: "Average sleep",
+  fit_readiness: "Today's readiness", fit_ready: "Ready to train", fit_ready_d: "Sleep and recent load look balanced. A normal or harder session should feel fine.",
+  fit_moderate: "Train moderately", fit_moderate_d: "Keep today's session lighter or shorter, and focus on technique or mobility.", fit_recover: "Prioritize recovery", fit_recover_d: "Rest, walk, hydrate and sleep early. If you feel unwell, skip training.",
+  why_fit_sleep_low: "Last night's sleep was {h} h, below your recent average of {a} h.", why_fit_load: "High training load in the last day ({m} effort points).", why_fit_unwell: "You checked in as feeling worse than usual today.", why_fit_ok: "Sleep and training load are within your normal pattern.",
+  fit_activity_week: "Active minutes per day this week", fit_log: "Log a workout", fit_log_title: "Log a workout", fit_type: "Activity", fit_duration: "Duration (minutes)", fit_intensity: "Effort", fit_rpe_hint: "1 = very easy, 10 = maximum effort.",
+  fit_recent: "Recent workouts", fit_none: "No workouts yet", fit_none_d: "Log a session and Wellpoint tracks your weekly goal and recovery.", fit_goals: "Goals", fit_goal_min: "Weekly active minutes", fit_goal_steps: "Daily steps", fit_saved: "Workout saved.", fit_goal_saved: "Goals updated.",
+  fit_who_note: "Many health guidelines suggest at least 150 minutes of moderate activity a week.", minutes_short: "min", m_steps: "Steps", m_rhr: "Resting heart rate", mode_fitness: "Fitness",
+  wt_run: "Run", wt_walk: "Walk", wt_football: "Football", wt_gym: "Gym", wt_swim: "Swim", wt_cycle: "Cycling", wt_padel: "Padel", wt_other: "Other", tl_workout: "Workout: {type}, {min} min",
+  demo_khalid_d: "Fitness profile · upcoming check-up"
+});
 
 /* العربية */
 STRINGS.ar = {
@@ -1106,6 +1154,34 @@ Object.assign(STRINGS.ar, {
   alarm_settings: "إعدادات المنبّه", alarm_sound: "صوت المنبّه", alarm_vibrate: "الاهتزاز", alarm_enable: "السماح بإشعارات المنبّه", alarm_enabled: "إشعارات المنبّه مفعّلة.",
   alarm_denied: "الإشعارات محظورة هنا. يبقى المنبّه يرن ما دام Wellpoint مفتوحًا، ويمكنك إضافته إلى الساعة.", alarm_ringing: "يرن حتى تستجيب",
   alarm_os_note: "يستمر المنبّه بالرنين والاهتزاز حتى تختار أحد الخيارات. الموقع يرن فقط وهو مفتوح؛ أضف المنبّه إلى ساعة هاتفك ليرن في أي وقت."
+});
+Object.assign(STRINGS.ar, {
+  trends: "الاتجاهات", trend_few: "أضف قراءات أكثر لرؤية الاتجاه.", trend_aria: "قراءات {what} خلال آخر 30 يومًا مع نطاقك المعتاد",
+  tr_systolic: "الانقباضي", tr_diastolic: "الانبساطي", tr_glucose: "السكر", tr_usual: "نطاقك المعتاد",
+  tr_above: "آخر قراءة أعلى من نطاقك المعتاد ({r}).", tr_below: "آخر قراءة أقل من نطاقك المعتاد ({r}).", tr_in: "آخر قراءة ضمن نطاقك المعتاد ({r}).",
+  tr_above_pill: "أعلى من المعتاد", tr_below_pill: "أقل من المعتاد", tr_in_pill: "معتاد", tr_how: "كيف يُحسب \"النطاق المعتاد\"؟", tr_table: "عرض كجدول",
+  why_usual_range: "نطاقك المعتاد هو النصف الأوسط من قراءاتك أنت خلال آخر 30 يومًا، فيعكس نمطك الطبيعي.", why_usual_not_target: "ليس هدفًا طبيًا. طبيبك هو من يحدد أهدافك.",
+  refill_soon: "سينفد {med} خلال {n} أيام تقريبًا", refill_soon_d: "اطلب إعادة صرف من الصيدلية أو اطلب وصفة جديدة من عيادتك.", refilled: "أعدت الصرف (+{n})", refill_saved: "تم تحديث الكمية.",
+  days_left: "متبقٍ {n} يوم", pills_left: "الحبوب المتوفرة (اختياري)", pack_size: "حجم العبوة", supply_hint: "يعدّ Wellpoint تنازليًا كلما سجّلت جرعة، ويذكّرك قبل النفاد بـ5 أيام.",
+  n_refill: "سينفد {med} خلال {n} أيام تقريبًا. حان وقت إعادة الصرف.", tl_refill: "تمت إعادة صرف {med}",
+  scan_title: "صوّر العلبة أو الوصفة", scan_d: "التقط صورة وسيملأ مساعد Wellpoint ما هو مطبوع، وتراجعه أنت قبل الحفظ.", scan_btn: "التقط أو اختر صورة", scan_reading: "جارٍ قراءة الملصق…",
+  scan_check: "تم الملء من صورتك. طابق كل حقل مع الملصق قبل الحفظ.", scan_unread: "غير مقروء على الملصق، فتُرك كما هو: {list}.", scan_unavailable: "التصوير يحتاج مساعد Wellpoint وهو غير متاح هنا. أدخل البيانات يدويًا.",
+  scan_done: "تمت قراءة الملصق. راجع التفاصيل.", scan_none: "لم نجد بيانات دواء في هذه الصورة.", scan_failed: "تعذّرت قراءة الصورة. جرّب صورة أوضح وبإضاءة جيدة.",
+  vp_title: "ملخص الزيارة", vp_reason: "سبب الزيارة", vp_adherence: "الالتزام بالأدوية (14 يومًا): {v}%", vp_latest: "الأخيرة", vp_usual: "المعتاد {r}", vp_n_readings: "{n} قراءة",
+  vp_checkins: "{n} متابعة، منها {w} أسوأ من المعتاد", vp_symptoms: "الأعراض المذكورة", vp_questions: "أسئلة لطبيبي", vp_footer: "أعدّه المريض في Wellpoint من سجلاته الخاصة. ليس وثيقة سريرية.",
+  vp_prepare: "جهّز ملخص الزيارة", vp_open_shared: "ملخص الزيارة (مُرسل)", vp_intro: "كل ما تغيّر منذ {date} في صفحة واحدة لطبيبك.", vp_since: "منذ آخر زيارة", vp_q_ph: "أضف سؤالًا",
+  vp_share: "أرسل إلى عيادتي", vp_reshare: "حدّث الملخص المُرسل", vp_shared_at: "أُرسل {when}", vp_no_consent: "فعّل المشاركة مع العيادات من الإعدادات لإرسال هذا الملخص.", vp_copy: "انسخ كنص", vp_shared: "تم إرسال الملخص إلى عيادتك.",
+  vp_from_patient: "ملخص الزيارة من المريض", tl_vp_shared: "أُرسل ملخص الزيارة إلى {clinic}", au_vp_shared: "أرسل ملخص زيارة",
+  fitness: "اللياقة والأداء", fitness_sub: "النشاط والاستشفاء وحِمل التمرين في مكان واحد. إرشاد عافية وليس نصيحة طبية.",
+  fit_week_goal: "دقائق النشاط هذا الأسبوع", fit_min_of: "{v} من {g} دقيقة", fit_workouts_n: "{n} تمارين", fit_workouts: "التمارين", fit_steps_avg: "متوسط الخطوات", fit_goal_of: "الهدف {g}", fit_rest_hr: "نبض الراحة", bpm: "نبضة/د", fit_sleep_avg: "متوسط النوم",
+  fit_readiness: "جاهزيتك اليوم", fit_ready: "جاهز للتمرين", fit_ready_d: "النوم والحِمل الأخير متوازنان. حصة عادية أو أقوى ستكون مناسبة.",
+  fit_moderate: "تمرّن باعتدال", fit_moderate_d: "اجعل حصة اليوم أخف أو أقصر، وركّز على التقنية أو المرونة.", fit_recover: "الأولوية للاستشفاء", fit_recover_d: "استرح وامشِ واشرب الماء ونَم مبكرًا. إن كنت متوعكًا فتجنّب التمرين.",
+  why_fit_sleep_low: "نمت البارحة {h} س، أقل من متوسطك الأخير {a} س.", why_fit_load: "حِمل تمرين مرتفع خلال اليوم الأخير ({m} نقطة جهد).", why_fit_unwell: "أفدت اليوم بأنك تشعر بأسوأ من المعتاد.", why_fit_ok: "النوم وحِمل التمرين ضمن نمطك الطبيعي.",
+  fit_activity_week: "دقائق النشاط اليومية هذا الأسبوع", fit_log: "سجّل تمرينًا", fit_log_title: "سجّل تمرينًا", fit_type: "النشاط", fit_duration: "المدة (دقائق)", fit_intensity: "الجهد", fit_rpe_hint: "1 = سهل جدًا، 10 = أقصى جهد.",
+  fit_recent: "آخر التمارين", fit_none: "لا تمارين بعد", fit_none_d: "سجّل حصة وسيتابع Wellpoint هدفك الأسبوعي واستشفاءك.", fit_goals: "الأهداف", fit_goal_min: "دقائق النشاط الأسبوعية", fit_goal_steps: "الخطوات اليومية", fit_saved: "تم حفظ التمرين.", fit_goal_saved: "تم تحديث الأهداف.",
+  fit_who_note: "توصي إرشادات صحية كثيرة بـ150 دقيقة على الأقل من النشاط المعتدل أسبوعيًا.", minutes_short: "د", m_steps: "الخطوات", m_rhr: "نبض الراحة", mode_fitness: "لياقة",
+  wt_run: "جري", wt_walk: "مشي", wt_football: "كرة قدم", wt_gym: "صالة رياضية", wt_swim: "سباحة", wt_cycle: "دراجة", wt_padel: "بادل", wt_other: "أخرى", tl_workout: "تمرين: {type}، {min} دقيقة",
+  demo_khalid_d: "ملف لياقة · فحص قادم"
 });
 
 /* 简体中文 */
@@ -1353,6 +1429,34 @@ Object.assign(STRINGS.zh, {
   alarm_denied: "此处已阻止通知。Wellpoint 打开时闹钟仍会响铃，你也可以将其添加到时钟。", alarm_ringing: "持续响铃，直到你响应",
   alarm_os_note: "闹钟会持续响铃和振动，直到你选择一个选项。网页只有在打开时才能响铃；添加到手机时钟即可随时响铃。"
 });
+Object.assign(STRINGS.zh, {
+  trends: "趋势", trend_few: "再添加几次读数即可查看趋势。", trend_aria: "近 30 天{what}读数及你的常规范围",
+  tr_systolic: "收缩压", tr_diastolic: "舒张压", tr_glucose: "血糖", tr_usual: "你的常规范围",
+  tr_above: "最新读数高于你的常规范围（{r}）。", tr_below: "最新读数低于你的常规范围（{r}）。", tr_in: "最新读数在你的常规范围内（{r}）。",
+  tr_above_pill: "高于常规", tr_below_pill: "低于常规", tr_in_pill: "常规", tr_how: "“常规范围”是怎么算的？", tr_table: "以表格显示",
+  why_usual_range: "常规范围是你自己近 30 天读数的中间一半，反映你的平常状态。", why_usual_not_target: "它不是医疗目标，你的目标由医生设定。",
+  refill_soon: "{med} 大约 {n} 天后用完", refill_soon_d: "请到药房续药，或向诊所申请新处方。", refilled: "已续药（+{n}）", refill_saved: "库存已更新。",
+  days_left: "剩 {n} 天", pills_left: "现有药片数（可选）", pack_size: "每盒数量", supply_hint: "每次标记服药后 Wellpoint 会自动扣减，并在用完前 5 天提醒你。",
+  n_refill: "{med} 大约 {n} 天后用完，该续药了。", tl_refill: "已续药：{med}",
+  scan_title: "拍摄药盒或处方", scan_d: "拍张照片，Wellpoint AI 会填入印刷的内容，保存前由你核对。", scan_btn: "拍照或选择照片", scan_reading: "正在识别标签…",
+  scan_check: "已根据照片填写。保存前请逐项对照标签核对。", scan_unread: "标签上无法识别，保持原样：{list}。", scan_unavailable: "拍照识别需要 Wellpoint AI，此处不可用。请手动填写。",
+  scan_done: "标签已识别，请核对详情。", scan_none: "照片中未找到药品信息。", scan_failed: "无法识别该照片，请换一张更清晰、光线充足的照片。",
+  vp_title: "就诊摘要", vp_reason: "就诊原因", vp_adherence: "服药依从性（14 天）：{v}%", vp_latest: "最新", vp_usual: "常规 {r}", vp_n_readings: "{n} 次读数",
+  vp_checkins: "{n} 次打卡，其中 {w} 次比平时差", vp_symptoms: "反馈的症状", vp_questions: "想问医生的问题", vp_footer: "由患者在 Wellpoint 中根据自己的记录整理，并非临床文件。",
+  vp_prepare: "准备就诊摘要", vp_open_shared: "就诊摘要（已共享）", vp_intro: "自 {date} 以来的所有变化，一页呈现给医生。", vp_since: "自上次就诊以来", vp_q_ph: "添加问题",
+  vp_share: "发送给我的诊所", vp_reshare: "更新已共享的摘要", vp_shared_at: "{when}已共享", vp_no_consent: "请在设置中开启与诊所共享，才能发送此摘要。", vp_copy: "复制为文本", vp_shared: "摘要已发送给你的诊所。",
+  vp_from_patient: "患者提供的就诊摘要", tl_vp_shared: "已向 {clinic} 共享就诊摘要", au_vp_shared: "共享了就诊摘要",
+  fitness: "健身与表现", fitness_sub: "活动、恢复和训练负荷集中在一处。属于健康生活建议，并非医疗建议。",
+  fit_week_goal: "本周活动分钟数", fit_min_of: "{v} / {g} 分钟", fit_workouts_n: "{n} 次训练", fit_workouts: "训练", fit_steps_avg: "平均步数", fit_goal_of: "目标 {g}", fit_rest_hr: "静息心率", bpm: "次/分", fit_sleep_avg: "平均睡眠",
+  fit_readiness: "今日准备度", fit_ready: "可以训练", fit_ready_d: "睡眠与近期负荷平衡，正常或高强度训练都合适。",
+  fit_moderate: "适度训练", fit_moderate_d: "今天的训练轻一点或短一点，专注技术或柔韧性。", fit_recover: "优先恢复", fit_recover_d: "休息、散步、补水并早睡。如果身体不适，请暂停训练。",
+  why_fit_sleep_low: "昨晚睡了 {h} 小时，低于你近期平均的 {a} 小时。", why_fit_load: "过去一天训练负荷较高（{m} 努力分）。", why_fit_unwell: "你今天打卡时感觉比平时差。", why_fit_ok: "睡眠和训练负荷都在你的正常范围内。",
+  fit_activity_week: "本周每日活动分钟数", fit_log: "记录训练", fit_log_title: "记录训练", fit_type: "运动类型", fit_duration: "时长（分钟）", fit_intensity: "强度", fit_rpe_hint: "1 = 非常轻松，10 = 竭尽全力。",
+  fit_recent: "最近训练", fit_none: "还没有训练记录", fit_none_d: "记录一次训练，Wellpoint 会跟踪你的每周目标和恢复情况。", fit_goals: "目标", fit_goal_min: "每周活动分钟", fit_goal_steps: "每日步数", fit_saved: "训练已保存。", fit_goal_saved: "目标已更新。",
+  fit_who_note: "许多健康指南建议每周至少进行 150 分钟中等强度活动。", minutes_short: "分钟", m_steps: "步数", m_rhr: "静息心率", mode_fitness: "健身",
+  wt_run: "跑步", wt_walk: "步行", wt_football: "足球", wt_gym: "健身房", wt_swim: "游泳", wt_cycle: "骑行", wt_padel: "板式网球", wt_other: "其他", tl_workout: "训练：{type}，{min} 分钟",
+  demo_khalid_d: "健身档案 · 即将体检"
+});
 
 /* ============================================================
    Wellpoint core: utilities, i18n runtime, mock backend
@@ -1449,7 +1553,7 @@ function passwordIssues(pw) {
 }
 
 /* ---------- persistence ---------- */
-const DB_KEY = "wellpoint.db.v3";
+const DB_KEY = "wellpoint.db.v4";
 let DB = null;
 function saveDB() { safeStore.set(DB_KEY, JSON.stringify(DB)); }
 function loadDB() { const raw = safeStore.get(DB_KEY); if (!raw) return null; try { return JSON.parse(raw); } catch { return null; } }
@@ -1477,9 +1581,9 @@ function nextAvailable(doc, from = today(), span = 14) {
 async function seedDB() {
   const T = today();
   const db = {
-    version: 3, users: [], profiles: {}, appointments: [], medications: [], doseLog: [], checkins: [], measurements: [], timeline: [],
+    version: 4, users: [], profiles: {}, appointments: [], medications: [], doseLog: [], checkins: [], measurements: [], timeline: [],
     notifications: [], emails: [], documents: [], caregivers: [], audit: [], journal: [], messages: [], sessions: [], clinicEdits: {},
-    integrations: {}, staff: [], pendingCodes: {}
+    integrations: {}, staff: [], pendingCodes: {}, workouts: []
   };
   const mk = async (u, pw) => { const h = await hashPassword(pw); db.users.push({ verified: true, createdAt: new Date().toISOString(), ...u, pw: h.hash, salt: h.salt }); };
   await mk({ id: "u_khalid", email: "khalid@demo.wellpoint.om", phone: "+96890000001", role: "patient", name: "Khalid" }, "Wellpoint1");
@@ -1496,7 +1600,7 @@ async function seedDB() {
     onboarded: true, name: "Khalid", dob: `${new Date().getFullYear() - 18}-03-14`, gender: "male", weight: 72, height: 175, nationality: "Omani", gov: "muscat", lang: "en",
     emergency: { name: "Salim (father)", phone: "+968 9000 0010" }, goals: ["general", "sleep", "fitness"], conditions: ["none"], allergies: ["Penicillin"],
     primaryClinic: "starcare", caregiverWanted: false, consent: { shareWithClinics: true, shareWithCaregivers: false, research: false },
-    prefs: { ...basePrefs, wake: "07:00", sleep: "23:30" }, mode: "general", simple: false, plan: "free", devices: ["health_connect"]
+    prefs: { ...basePrefs, wake: "07:00", sleep: "23:30" }, mode: "fitness", fitness: { goalMin: 150, goalSteps: 8000 }, simple: false, plan: "free", devices: ["health_connect"]
   };
   db.profiles.u_aisha = {
     onboarded: true, name: "Aisha Al Saadi", dob: "1961-06-02", gender: "female", weight: 78, height: 158, nationality: "Omani", gov: "muscat", lang: "ar",
@@ -1524,23 +1628,32 @@ async function seedDB() {
   });
 
   const med = (o) => db.medications.push({ id: uid("med"), active: true, notes: "", createdAt: new Date().toISOString(), ...o });
-  med({ patientId: "u_khalid", name: "Vitamin D3", dose: "1000 IU · 1 tablet", frequency: "once", times: ["08:30"], food: "after", start: addDays(T, -30), end: addDays(T, 60), doctor: "d1", clinic: "starcare", source: "patient", verified: false, notes: "Demo supplement entry" });
-  med({ patientId: "u_aisha", name: "Metformin", dose: "500 mg · 1 tablet", frequency: "twice", times: ["07:00", "19:00"], food: "after", start: addDays(T, -12), end: "", doctor: "d9", clinic: "kims", source: "clinic", verified: true, notes: "Demo prescription from clinic record" });
-  med({ patientId: "u_aisha", name: "Amlodipine", dose: "5 mg · 1 tablet", frequency: "once", times: ["07:00"], food: "any", start: addDays(T, -90), end: "", doctor: "d10", clinic: "kims", source: "clinic", verified: true, notes: "Demo prescription" });
+  med({ patientId: "u_khalid", name: "Vitamin D3", dose: "1000 IU · 1 tablet", frequency: "once", times: ["08:30"], food: "after", start: addDays(T, -30), end: addDays(T, 60), doctor: "d1", clinic: "starcare", source: "patient", verified: false, notes: "Demo supplement entry", supply: { left: 52, pack: 60, perDose: 1 } });
+  med({ patientId: "u_aisha", name: "Metformin", dose: "500 mg · 1 tablet", frequency: "twice", times: ["07:00", "19:00"], food: "after", start: addDays(T, -12), end: "", doctor: "d9", clinic: "kims", source: "clinic", verified: true, notes: "Demo prescription from clinic record", supply: { left: 9, pack: 60, perDose: 1 } });
+  med({ patientId: "u_aisha", name: "Amlodipine", dose: "5 mg · 1 tablet", frequency: "once", times: ["07:00"], food: "any", start: addDays(T, -90), end: "", doctor: "d10", clinic: "kims", source: "clinic", verified: true, notes: "Demo prescription", supply: { left: 24, pack: 30, perDose: 1 } });
   med({ patientId: "u_aisha", name: "Atorvastatin", dose: "20 mg · 1 tablet", frequency: "once", times: ["21:00"], food: "any", start: addDays(T, -90), end: "", doctor: "d10", clinic: "kims", source: "clinic", verified: true, notes: "Demo prescription" });
   // adherence history (last 7 days)
-  for (const m of db.medications) for (let i = 1; i <= 7; i++) for (const tm of m.times) {
+  for (const m of db.medications) for (let i = 1; i <= 14; i++) for (const tm of m.times) {
     const miss = hashStr(m.id + i + tm) % 17 === 0;
     db.doseLog.push({ id: uid("dl"), medId: m.id, patientId: m.patientId, date: addDays(T, -i), time: tm, status: miss ? "missed" : "taken", at: addDays(T, -i) + "T" + tm });
   }
 
   const meas = (o) => db.measurements.push({ id: uid("ms"), ...o });
   for (let i = 1; i <= 7; i++) meas({ patientId: "u_khalid", type: "sleep", value: [7.4, 6.1, 5.6, 6.0, 7.8, 5.4, 6.2][i - 1], at: addDays(T, -i) + "T07:00", source: "device" });
+  for (let i = 0; i <= 13; i++) {
+    meas({ patientId: "u_khalid", type: "steps", value: [9420, 7310, 11870, 6020, 8840, 12650, 5480, 9930, 7710, 10450, 6890, 8210, 13020, 7450][i], at: addDays(T, -i) + "T21:00", source: "device" });
+    if (i % 3 === 0) meas({ patientId: "u_khalid", type: "rhr", value: [58, 60, 57, 59, 61][i / 3], at: addDays(T, -i) + "T06:30", source: "device" });
+  }
+  [[0, "gym", 45, 7], [1, "football", 75, 8], [3, "run", 30, 6], [4, "walk", 40, 3], [6, "football", 90, 8], [8, "gym", 50, 7], [10, "swim", 35, 6], [12, "run", 25, 5]].forEach(([d, type, min, rpe]) => db.workouts.push({ id: uid("w"), patientId: "u_khalid", at: addDays(T, -d) + "T18:00", type, min, rpe, notes: "" }));
   meas({ patientId: "u_khalid", type: "weight", value: 72, at: addDays(T, -9) + "T08:00", source: "patient" });
   meas({ patientId: "u_aisha", type: "bp", value: 138, value2: 86, at: addDays(T, -12) + "T09:10", source: "clinic" });
   meas({ patientId: "u_aisha", type: "glucose", value: 142, at: addDays(T, -12) + "T09:10", source: "clinic", unit: "mg/dL" });
   meas({ patientId: "u_aisha", type: "bp", value: 134, value2: 84, at: addDays(T, -5) + "T07:30", source: "caregiver" });
   meas({ patientId: "u_aisha", type: "glucose", value: 131, at: addDays(T, -6) + "T07:15", source: "patient", unit: "mg/dL" });
+  [[29, 132, 83, 128], [26, 136, 85, 139], [23, 130, 82, 124], [20, 138, 87, 147], [17, 133, 84, 131], [15, 129, 81, 126], [10, 135, 85, 136], [8, 131, 82, 129], [3, 142, 89, 151], [2, 139, 88, 144]].forEach(([d, sy, di, g]) => {
+    meas({ patientId: "u_aisha", type: "bp", value: sy, value2: di, at: addDays(T, -d) + "T07:20", source: d % 2 ? "patient" : "caregiver" });
+    meas({ patientId: "u_aisha", type: "glucose", value: g, at: addDays(T, -d) + "T07:05", source: "patient", unit: "mg/dL" });
+  });
   meas({ patientId: "u_aisha", type: "hba1c", value: 7.4, at: addDays(T, -12) + "T09:10", source: "clinic", unit: "%" });
 
   db.checkins.push({ id: uid("ci"), patientId: "u_aisha", at: addDays(T, -4) + "T10:00", mood: "same", symptoms: [], level: "green", by: "patient" });
@@ -1895,7 +2008,13 @@ function logDose(medId, time, status, dateIso = today()) {
   if (!sc.all && !sc.meds) throw { code: "err_forbidden" };
   let log = DB.doseLog.find((d) => d.medId === medId && d.date === dateIso && d.time === time);
   if (!log) { log = { id: uid("dl"), medId, patientId: m.patientId, date: dateIso, time }; DB.doseLog.push(log); }
+  const was = log.status;
   log.status = status; log.at = new Date().toISOString(); log.by = App.user.id;
+  if (status === "taken" && was !== "taken" && m.supply?.left != null) {
+    m.supply.left = Math.max(0, m.supply.left - (m.supply.perDose || 1));
+    const d = supplyDays(m);
+    if (d != null && d <= 5) notify(m.patientId, "medications", { k: "n_refill", p: { med: m.name, n: d } }, { silent: true });
+  }
   if (App.user.role === "caregiver") { audit("au_caregiver_dose", m.patientId); notify(m.patientId, "caregiver", { k: "n_cg_marked", p: { name: App.user.name.split(" ")[0], med: m.name } }, { silent: true }); }
   saveDB();
 }
@@ -1921,6 +2040,8 @@ function aiContext(patientId) {
     lines.push("Recent check-ins: " + DB.checkins.filter((c) => c.patientId === patientId).slice(-5).map((c) => `${c.at.slice(0, 10)} ${c.mood} ${c.symptoms.join(",")} level=${c.level}`).join("; "));
     lines.push("Journal: " + DB.journal.filter((j) => j.patientId === patientId).slice(-6).map((j) => `${j.at.slice(0, 10)} [${j.tags.join(",")}] ${j.text}`).join("; "));
     lines.push("Timeline: " + DB.timeline.filter((x) => x.patientId === patientId).sort((a, b) => (a.at < b.at ? 1 : -1)).slice(0, 8).map((x) => `${x.at.slice(0, 10)} ${tx(x.msg)}`).join("; "));
+    const wk = (DB.workouts || []).filter((w) => w.patientId === patientId).slice(-8);
+    if (wk.length) lines.push("Workouts: " + wk.map((w) => `${w.at.slice(0, 10)} ${w.type} ${w.min}min RPE${w.rpe}`).join("; ") + `. Active minutes this week: ${fitnessWeek(patientId).min}/${(DB.profiles[patientId].fitness || {}).goalMin || 150}.`);
     lines.push("Data freshness: " + freshness(patientId).rows.map((r) => `${r.key}: ${r.days == null ? "never" : r.days + " days ago"}`).join("; "));
   }
   return lines.join("\n");
@@ -2084,6 +2205,84 @@ const Ring = {
     try { this.lock?.release(); } catch {} this.lock = null;
   }
 };
+
+/* ---------- refill tracking ---------- */
+function supplyDays(m) {
+  if (!m.supply || m.supply.left == null) return null;
+  const perDay = (m.frequency === "weekly" ? 1 / 7 : FREQ_COUNT[m.frequency] || 0) * (m.supply.perDose || 1);
+  return perDay ? Math.floor(m.supply.left / perDay) : null;
+}
+
+/* ---------- personal baseline ("your usual range") ---------- */
+function usualRange(vals) {
+  if (vals.length < 4) return null;
+  const v = [...vals].sort((a, b) => a - b); const q = (p) => { const i = (v.length - 1) * p, lo = Math.floor(i), hi = Math.ceil(i); return v[lo] + (v[hi] - v[lo]) * (i - lo); };
+  return [Math.round(q(0.25)), Math.round(q(0.75))];
+}
+function trendSeries(pid, type, days = 30) {
+  const pts = DB.measurements.filter((m) => m.patientId === pid && m.type === type && daysBetween(m.at.slice(0, 10), today()) <= days).sort((a, b) => (a.at > b.at ? 1 : -1));
+  if (type === "bp") return { pts, series: [{ key: "systolic", get: (m) => m.value, cls: "s1" }, { key: "diastolic", get: (m) => m.value2, cls: "s2" }], unit: "mmHg" };
+  return { pts, series: [{ key: type, get: (m) => m.value, cls: "s1" }], unit: type === "glucose" ? "mg/dL" : "" };
+}
+
+/* ---------- visit summary ("visit pack") ---------- */
+function visitPack(apt) {
+  const pid = apt.patientId, p = DB.profiles[pid];
+  const last = DB.appointments.filter((a) => a.patientId === pid && a.status === "completed" && a.date < apt.date).sort((a, b) => (a.date < b.date ? 1 : -1))[0];
+  const since = last?.date || addDays(today(), -30);
+  const meds = DB.medications.filter((m) => m.patientId === pid && m.active);
+  const readings = ["bp", "glucose"].map((type) => {
+    const { pts, series } = trendSeries(pid, type, 60); if (!pts.length) return null;
+    const lastPt = pts.at(-1); const ranges = series.map((s) => usualRange(pts.map(s.get)));
+    return { type, latest: type === "bp" ? `${lastPt.value}/${lastPt.value2}` : String(lastPt.value), at: lastPt.at, n: pts.length, range: ranges[0] ? (type === "bp" ? `${ranges[0].join("–")} / ${ranges[1].join("–")}` : ranges[0].join("–")) : null };
+  }).filter(Boolean);
+  const checkins = DB.checkins.filter((c) => c.patientId === pid && c.at.slice(0, 10) >= since);
+  const symptoms = {}; checkins.forEach((c) => c.symptoms.forEach((s) => (symptoms[s] = (symptoms[s] || 0) + 1)));
+  return {
+    since, meds: meds.map((m) => ({ name: m.name, dose: m.dose, freq: m.frequency, food: m.food, verified: m.verified, days: supplyDays(m) })),
+    adherence: adherence(pid, 14), readings, checkins: checkins.length, worse: checkins.filter((c) => c.mood === "worse").length, symptoms,
+    allergies: p.allergies || [], conditions: (p.conditions || []).filter((c) => !["none", "prefer_not"].includes(c)), questions: apt.questions || []
+  };
+}
+function visitPackText(apt) {
+  const v = visitPack(apt); const c = CLINICS.find((x) => x.id === apt.clinicId); const p = DB.profiles[apt.patientId];
+  const L = [];
+  L.push(t("vp_title") + " — " + p.name, `${fmtDate(apt.date, { weekday: "long", day: "numeric", month: "long" })} · ${fmtTime(apt.time)} · ${clinicName(c)}`, "");
+  if (apt.notes) L.push(t("vp_reason") + ": " + apt.notes);
+  if (v.conditions.length) L.push(t("conditions") + ": " + v.conditions.map((x) => t("cond_" + x)).join(", "));
+  L.push(t("allergies") + ": " + (v.allergies.join(", ") || t("none_recorded")), "");
+  L.push(t("my_meds") + ":"); v.meds.forEach((m) => L.push(`• ${m.name} ${m.dose || ""} · ${t("freq_" + m.freq)} · ${t("food_" + m.food)}${m.verified ? "" : " (" + t("self_entered") + ")"}`));
+  if (v.adherence != null) L.push(t("vp_adherence", { v: v.adherence }));
+  L.push("");
+  v.readings.forEach((r) => L.push(`${t("m_" + r.type)}: ${t("vp_latest")} ${r.latest} (${fmtDate(r.at.slice(0, 10))}) · ${r.range ? t("vp_usual", { r: r.range }) : ""} · ${t("vp_n_readings", { n: r.n })}`));
+  L.push(t("vp_checkins", { n: v.checkins, w: v.worse }));
+  const sy = Object.entries(v.symptoms); if (sy.length) L.push(t("vp_symptoms") + ": " + sy.map(([k, n]) => `${t("sym_" + k)} ×${n}`).join(", "));
+  if (v.questions.length) { L.push("", t("vp_questions") + ":"); v.questions.forEach((q) => L.push("• " + q)); }
+  L.push("", t("vp_footer"));
+  return L.join("\n");
+}
+
+/* ---------- fitness & performance (wellness guidance, not medical) ---------- */
+function fitnessWeek(pid) {
+  const since = addDays(today(), -6);
+  const w = (DB.workouts || []).filter((x) => x.patientId === pid && x.at.slice(0, 10) >= since);
+  const days = Array.from({ length: 7 }, (_, i) => { const d = addDays(today(), i - 6); return { d, min: w.filter((x) => x.at.slice(0, 10) === d).reduce((a, b) => a + b.min, 0) }; });
+  return { workouts: w, min: w.reduce((a, b) => a + b.min, 0), days };
+}
+function readiness(pid) {
+  const reasons = []; let score = 0;
+  const sleep = DB.measurements.filter((m) => m.patientId === pid && m.type === "sleep").sort((a, b) => (a.at > b.at ? 1 : -1));
+  const last = sleep.at(-1), avg = sleep.length > 2 ? sleep.slice(-8, -1).reduce((a, b) => a + b.value, 0) / Math.max(1, sleep.slice(-8, -1).length) : null;
+  if (last && (last.value < 6 || (avg && last.value < avg - 1))) { score--; reasons.push({ k: "why_fit_sleep_low", p: { h: fmtNum(last.value, { maximumFractionDigits: 1 }), a: avg ? fmtNum(avg, { maximumFractionDigits: 1 }) : "—" } }); }
+  const y = addDays(today(), -1);
+  const load = (DB.workouts || []).filter((w) => w.patientId === pid && w.at.slice(0, 10) >= y).reduce((a, b) => a + b.min * b.rpe, 0);
+  if (load >= 450) { score--; reasons.push({ k: "why_fit_load", p: { m: fmtNum(load) } }); }
+  const ci = DB.checkins.find((c) => c.patientId === pid && c.at.slice(0, 10) === today());
+  if (ci?.mood === "worse") { score -= 2; reasons.push({ k: "why_fit_unwell" }); }
+  if (!reasons.length) reasons.push({ k: "why_fit_ok" });
+  reasons.push({ k: "why_wellness_only" });
+  return { level: score >= 0 ? "ready" : score === -1 ? "moderate" : "recover", reasons };
+}
 
 /* ============================================================
    UI foundation: icons, router, state binding, shared components,
@@ -2537,7 +2736,8 @@ function homeView() {
   const aiCard = `<button class="card tap row reveal" data-go="ai"><div class="iconwrap">${icon("sparkle")}</div><div class="grow"><b>${esc(t("ask_ai"))}</b><p class="small muted">${esc(t(chronic ? "ai_hint_chronic" : "ai_hint_general"))}</p></div>${flipIcon("chevron", "ico-sm")}</button>`;
 
   const quiet = `<div class="quiet-links">${allow("appts") ? `<button class="quiet-link" data-go="discover">${icon("search", "ico-sm")}<span>${esc(t("find_care"))}</span>${flipIcon("chevron", "ico-sm")}</button>` : ""}<button class="quiet-link" data-go="ai">${icon("sparkle", "ico-sm")}<span>${esc(t("ask_ai"))}</span>${flipIcon("chevron", "ico-sm")}</button>${tasks.length ? `<button class="quiet-link" data-go="${tasks[0][2]}">${icon(tasks[0][0], "ico-sm")}<span>${esc(tasks[0][1])}</span>${flipIcon("chevron", "ico-sm")}</button>` : ""}</div>`;
-  const order = chronic ? [staleCard, medCard, nextCard, focusCard, quiet] : [nextCard, medCard, focusCard, quiet];
+  const fitCard = !isCaregiver() && (p.mode === "fitness" || (DB.workouts || []).some((w) => w.patientId === pid)) ? fitnessHomeCard(pid) : "";
+  const order = chronic ? [staleCard, medCard, nextCard, focusCard, quiet] : p.mode === "fitness" ? [fitCard, nextCard, focusCard, medCard, quiet] : [nextCard, medCard, fitCard, focusCard, quiet];
   const name = isCaregiver() ? firstName(me.name || App.user.name) : firstName(p.name);
   return shell(`${header("")}
   <div class="page stack-lg">
@@ -2773,6 +2973,7 @@ function apptSheet(a) {
     <dl class="kv"><dt>${esc(t("clinic"))}</dt><dd>${esc(clinicName(c))}</dd><dt>${esc(t("doctor"))}</dt><dd>${esc(doctorName(d))}</dd><dt>${esc(t("specialty"))}</dt><dd>${esc(t("sp_" + a.specialty))}</dd><dt>${esc(t("location"))}</dt><dd>${esc(c.area)}, ${esc(t("gov_" + c.gov))}</dd><dt>${esc(t("appt_type"))}</dt><dd>${esc(t("at_" + a.type))}</dd><dt>${esc(t("notes"))}</dt><dd>${esc(a.notes || "—")}</dd></dl>
     ${upcoming ? `<div class="grid-2"><button class="btn secondary" data-act="ics" data-id="${a.id}">${icon("calendar", "ico-sm")} ${esc(t("add_calendar"))}</button><a class="btn secondary" href="${mapUrl}" target="_blank" rel="noopener">${icon("pin", "ico-sm")} ${esc(t("directions"))}</a>
       <button class="btn secondary" data-act="call" data-v="${esc(c.phone)}">${icon("phone", "ico-sm")} ${esc(t("contact_clinic"))}</button><button class="btn secondary" data-act="appt-resched" data-id="${a.id}">${icon("refresh", "ico-sm")} ${esc(t("reschedule"))}</button></div>
+      <button class="btn" data-go="visit-pack" data-id="${a.id}">${icon("file", "ico-sm")} ${esc(t(a.pack ? "vp_open_shared" : "vp_prepare"))}</button>
       <button class="btn ghost" style="color:var(--bad)" data-act="appt-cancel" data-id="${a.id}">${esc(t("cancel_appt"))}</button>` : `<button class="btn secondary" data-act="book-doc" data-id="${d.id}">${esc(t("book_again"))}</button>`}
     <details class="why"><summary>${icon("clock", "ico-sm")} ${esc(t("history"))}</summary><ul>${a.history.map((h) => `<li>${esc(fmtDate(h.at.slice(0, 10)))} — ${esc(t("st_" + h.status))}</li>`).join("")}</ul></details></div>`;
 }
@@ -2791,13 +2992,14 @@ function medsView() {
   <div class="page stack-lg">
     ${caregiverBanner()}
     <div class="row between"><h1>${esc(t("tab_meds"))}</h1>${allow("meds") && !isCaregiver() ? `<button class="btn sm" data-go="med-edit">${icon("plus", "ico-sm")} ${esc(t("add"))}</button>` : ""}</div>
+    ${meds.filter((m) => { const d = supplyDays(m); return d != null && d <= 5; }).map((m) => `<div class="banner warn">${icon("pill")}<div class="grow stack-sm"><b>${esc(t("refill_soon", { med: m.name, n: fmtNum(supplyDays(m)) }))}</b><span class="small">${esc(t("refill_soon_d"))}</span>${isCaregiver() ? "" : `<div><button class="btn sm" data-act="refilled" data-id="${m.id}">${esc(t("refilled", { n: fmtNum(m.supply.pack || 30) }))}</button></div>`}</div></div>`).join("")}
     ${meds.length ? `<section class="card stack">
       <div class="row"><div class="ring" style="--p:${sched.length ? Math.round((taken / sched.length) * 100) : 0}"><span>${fmtNum(taken)}/${fmtNum(sched.length)}</span></div><div class="grow"><h3>${esc(t("today_schedule"))}</h3><p class="small muted">${adh != null ? esc(t("adherence_7d", { v: fmtNum(adh) })) : ""}</p></div></div>
       <div>${sched.map((i) => `<div class="dose ${i.status}"><span class="t">${esc(fmtTime(i.time))}</span><div class="grow"><h4>${esc(i.med.name)}</h4><p class="xs muted">${esc(i.med.dose || "")} · ${esc(t("food_" + i.med.food))}</p></div>
         ${i.status === "taken" ? `<span class="pill good">${esc(t("taken"))}</span>` : `<div class="row" style="gap:6px">${i.status === "missed" ? `<span class="pill bad">${esc(t("missed"))}</span>` : ""}<button class="btn sm good" data-act="dose" data-med="${i.med.id}" data-time="${i.time}" data-s="taken" aria-label="${esc(t("taken"))}">${icon("check", "ico-sm")}</button></div>`}</div>`).join("") || `<p class="muted small">${esc(t("nothing_today"))}</p>`}</div>
       <div class="row wrap"><button class="btn sm" data-go="routine">${icon("sparkle", "ico-sm")} ${esc(t("rt_cta"))}</button><button class="btn sm secondary" data-act="clock-all">${icon("clock", "ico-sm")} ${esc(t("clk_btn"))}</button></div>
     </section>
-    <section class="stack"><h3>${esc(t("my_meds"))}</h3>${meds.map((m) => `<button class="card tap row reveal" ${isCaregiver() ? "" : `data-go="med-edit" data-id="${m.id}"`}><div class="iconwrap">${icon("pill")}</div><div class="grow"><div class="row wrap" style="gap:6px"><h4>${esc(m.name)}</h4>${m.verified ? `<span class="pill good">${esc(t("clinic_verified"))}</span>` : `<span class="pill plain">${esc(t("self_entered"))}</span>`}</div><p class="small muted">${esc(m.dose || "—")} · ${esc(t("freq_" + m.frequency))}</p><p class="xs faint num">${m.times.map(fmtTime).join(" · ")}</p></div>${isCaregiver() ? "" : flipIcon("chevron", "ico-sm")}</button>`).join("")}</section>`
+    <section class="stack"><h3>${esc(t("my_meds"))}</h3>${meds.map((m) => `<button class="card tap row reveal" ${isCaregiver() ? "" : `data-go="med-edit" data-id="${m.id}"`}><div class="iconwrap">${icon("pill")}</div><div class="grow"><div class="row wrap" style="gap:6px"><h4>${esc(m.name)}</h4>${m.verified ? `<span class="pill good">${esc(t("clinic_verified"))}</span>` : `<span class="pill plain">${esc(t("self_entered"))}</span>`}</div><p class="small muted">${esc(m.dose || "—")} · ${esc(t("freq_" + m.frequency))}</p><p class="xs faint num">${m.times.map(fmtTime).join(" · ")}${supplyDays(m) != null ? ` · <span class="pill ${supplyDays(m) <= 5 ? "warn" : "plain"}">${esc(t("days_left", { n: fmtNum(supplyDays(m)) }))}</span>` : ""}</p></div>${isCaregiver() ? "" : flipIcon("chevron", "ico-sm")}</button>`).join("")}</section>`
     : emptyState("pill", t("no_meds"), t("no_meds_d"), isCaregiver() ? "" : `<button class="btn" data-go="med-edit">${icon("plus", "ico-sm")} ${esc(t("add_first_med"))}</button>`)}
     ${meds.length && !isCaregiver() ? alarmSettings() : ""}
     <div class="banner">${icon("shield")}<span class="small">${esc(t("med_safety"))}</span></div>
@@ -2817,7 +3019,7 @@ function medEditView() {
   const pid = PID(); const id = UI.route.params.id;
   if (!UI.medForm || UI.medForm._for !== (id || "new")) {
     const m = id ? DB.medications.find((x) => x.id === id) : null;
-    UI.medForm = m ? { ...m, times: [...m.times], _for: id } : { _for: "new", name: "", dose: "", frequency: "once", times: ["08:00"], food: "any", start: today(), end: "", notes: "", doctor: "", clinic: "", verified: false, source: "patient" };
+    UI.medForm = m ? { ...m, times: [...m.times], _for: id, supplyLeft: m.supply?.left ?? "", supplyPack: m.supply?.pack ?? "" } : { _for: "new", name: "", dose: "", frequency: "once", times: ["08:00"], food: "any", start: today(), end: "", notes: "", doctor: "", clinic: "", verified: false, source: "patient" };
     UI.medForm.suggest = null;
   }
   const f = UI.medForm; const n = FREQ_COUNT[f.frequency];
@@ -2827,6 +3029,9 @@ function medEditView() {
   return shell(`${header(id ? t("edit_med") : t("add_med"), { back: true })}
   <div class="page stack-lg">
     ${locked ? `<div class="banner good">${icon("shield")}<span class="small">${esc(t("verified_locked"))}</span></div>` : ""}
+    ${locked ? "" : `<section class="card tint stack"><div class="row"><div class="iconwrap">${icon("sparkle")}</div><div class="grow"><b>${esc(t("scan_title"))}</b><p class="small muted">${esc(t("scan_d"))}</p></div></div>
+      <label class="btn secondary" for="scan-file">${icon("upload", "ico-sm")} ${esc(t(f.scanning ? "scan_reading" : "scan_btn"))}</label><input type="file" id="scan-file" accept="image/*" capture="environment" hidden ${f.scanning ? "disabled" : ""}>
+      ${f.scanned ? `<div class="banner warn">${icon("alert")}<span class="small">${esc(t("scan_check"))}${f.scanned.unread?.length ? " " + esc(t("scan_unread", { list: f.scanned.unread.map((k) => t(k)).join(", ") })) : ""}</span></div>` : ""}</section>`}
     <form class="stack" data-form="med" novalidate>
       ${field("m-name", t("med_name"), inputEl("m-name", "medForm.name", { attrs: locked ? "readonly" : "required" }))}
       ${field("m-dose", t("dose"), inputEl("m-dose", "medForm.dose", { placeholder: t("dose_ph"), attrs: locked ? "readonly" : "" }), t("dose_hint"))}
@@ -2838,6 +3043,8 @@ function medEditView() {
       </section>` : `<p class="hint">${esc(t("prn_note"))}</p>`}
       <div class="grid-2">${field("m-start", t("start_date"), inputEl("m-start", "medForm.start", { type: "date" }))}${field("m-end", t("end_date_opt"), inputEl("m-end", "medForm.end", { type: "date" }))}</div>
       <div class="grid-2">${field("m-doc", t("prescribing_doctor"), selectEl("m-doc", "medForm.doctor", [["", "—"], ...DOCTORS.map((d) => [d.id, doctorName(d)])]))}${field("m-clinic", t("prescribing_clinic"), selectEl("m-clinic", "medForm.clinic", [["", "—"], ...CLINICS.map((c) => [c.id, clinicName(c)])]))}</div>
+      <div class="grid-2">${field("m-left", t("pills_left"), inputEl("m-left", "medForm.supplyLeft", { type: "number", attrs: 'inputmode="numeric" min="0"' }))}${field("m-pack", t("pack_size"), inputEl("m-pack", "medForm.supplyPack", { type: "number", attrs: 'inputmode="numeric" min="1"' }))}</div>
+      <p class="hint">${esc(t("supply_hint"))}</p>
       ${field("m-notes", t("notes"), `<textarea class="input" id="m-notes" data-bind="medForm.notes">${esc(f.notes || "")}</textarea>`)}
       <button class="btn xl block" type="submit">${esc(t("save"))}</button>
       ${id ? `<button type="button" class="btn ghost" style="color:var(--bad)" data-act="med-delete" data-id="${id}">${esc(t("remove_med"))}</button>` : ""}
@@ -2891,7 +3098,8 @@ function healthView() {
       ${whyBlock([{ k: "why_freshness" }, { k: "why_stale_not_worse" }], t("what_is_this"))}</section>
     <section class="stack"><div class="row between"><h3>${esc(t("latest_measurements"))}</h3><button class="btn sm secondary" data-go="measure">${icon("plus", "ico-sm")} ${esc(t("add"))}</button></div>
       ${tiles.length ? `<div class="grid-2">${tiles.map(([m, k, f, u]) => `<div class="tile"><span class="xs faint">${esc(t(k))}</span><span class="big">${esc(f(m))} <span class="xs faint">${esc(u)}</span></span><span class="xs faint">${esc(relDays(m.at))} · ${esc(t("src_" + (m.source || "patient")))}</span></div>`).join("")}</div>` : emptyState("activity", t("no_measurements"), t("no_measurements_d"))}</section>
-    <nav class="card list-card">${[["summary", "chart", "health_summary"], ["timeline", "activity", "health_timeline"], ["journal", "journal", "journal"], ...(allow("docs") ? [["documents", "file", "documents"]] : [])].map(([r, ic, k]) => `<button class="quiet-link" data-go="${r}">${icon(ic, "ico-sm")}<span>${esc(t(k))}</span>${flipIcon("chevron", "ico-sm")}</button>`).join("")}</nav>
+    ${trendCard(pid)}
+    <nav class="card list-card">${[["fitness", "activity", "fitness"], ["summary", "chart", "health_summary"], ["timeline", "activity", "health_timeline"], ["journal", "journal", "journal"], ...(allow("docs") ? [["documents", "file", "documents"]] : [])].map(([r, ic, k]) => `<button class="quiet-link" data-go="${r}">${icon(ic, "ico-sm")}<span>${esc(t(k))}</span>${flipIcon("chevron", "ico-sm")}</button>`).join("")}</nav>
     <details class="card fold reveal" id="fold-sources"><summary><span class="iconwrap">${icon("link", "ico-sm")}</span><h4 class="grow">${esc(t("connected_sources"))}</h4>${icon("chevron", "ico-sm fold-ico")}</summary><div class="stack fold-body"><p class="small muted">${esc(t("connected_sources_d"))}</p>
       <div class="list">${ints.map((i) => { const c = CLINICS.find((x) => x.id === i.clinicId); return `<div class="li"><div class="iconwrap">${icon("link")}</div><div class="grow"><b>${esc(clinicName(c))}</b><p class="xs muted">${esc(t(Adapters[i.adapter].label))} · ${i.lastSync ? esc(t("synced", { when: relDays(i.lastSync) })) : esc(t("not_synced"))}</p></div>${i.status === "connected" && i.adapter !== "manual" ? `<button class="btn sm secondary" data-act="sync" data-c="${i.clinicId}">${icon("refresh", "ico-sm")} ${esc(t("sync"))}</button>` : i.status === "available" ? `<button class="btn sm" data-act="connect" data-c="${i.clinicId}">${esc(t("connect"))}</button>` : `<span class="pill plain">${esc(t("clinic_updates"))}</span>`}</div>`; }).join("")}
       ${(p.devices || []).map((dv) => `<div class="li"><div class="iconwrap good">${icon("activity")}</div><div class="grow"><b>${esc(t("dev_" + dv))}</b><p class="xs muted">${esc(t("dev_mock"))}</p></div><span class="pill good">${esc(t("connected"))}</span></div>`).join("")}</div>
@@ -3127,7 +3335,7 @@ function profileView() {
     <section class="card stack"><div class="row between"><div><b>${esc(t("language"))}</b></div>${langSwitcher()}</div><div class="divider"></div>
       <div class="row between"><b>${esc(t("theme"))}</b><button class="btn sm secondary" data-act="theme">${icon("moon", "ico-sm")} ${esc(themeLabel())}</button></div><div class="divider"></div>
       <div class="row between"><div class="grow"><b>${esc(t("simple_mode"))}</b><p class="xs muted">${esc(t("simple_mode_d"))}</p></div><button class="switch ${me.simple ? "on" : ""}" data-act="toggle-simple" role="switch" aria-checked="${!!me.simple}" aria-label="${esc(t("simple_mode"))}"></button></div>
-      ${isCaregiver() ? "" : `<div class="divider"></div><div class="row between"><div class="grow"><b>${esc(t("dashboard_mode"))}</b><p class="xs muted">${esc(t("dashboard_mode_d"))}</p></div><div class="seg">${["general", "chronic"].map((m) => `<button class="${me.mode === m ? "on" : ""}" data-act="set-mode" data-v="${m}">${esc(t("mode_" + m))}</button>`).join("")}</div></div>`}</section>
+      ${isCaregiver() ? "" : `<div class="divider"></div><div class="row between"><div class="grow"><b>${esc(t("dashboard_mode"))}</b><p class="xs muted">${esc(t("dashboard_mode_d"))}</p></div><div class="seg">${["general", "chronic", "fitness"].map((m) => `<button class="${me.mode === m ? "on" : ""}" data-act="set-mode" data-v="${m}">${esc(t("mode_" + m))}</button>`).join("")}</div></div>`}</section>
     <section class="card list" style="padding:4px 16px">${links.map(([r, ic, k]) => `<button class="li" data-go="${r}" style="background:none;border-left:0;border-right:0;border-top:0;width:100%;text-align:start;color:inherit"><span class="iconwrap">${icon(ic)}</span><span class="grow">${esc(t(k))}</span>${flipIcon("chevron", "ico-sm")}</button>`).join("")}</section>
     <button class="btn secondary" data-act="logout">${icon("logout", "ico-sm")} ${esc(t("sign_out"))}</button>
   </div>`);
@@ -3280,9 +3488,115 @@ function clockSheet(items) {
     <button class="btn ghost" data-act="sheet-close">${esc(t("close"))}</button></div>`;
 }
 
+/* ---------- TRENDS with personal usual range ---------- */
+function trendCard(pid) {
+  const type = UI.trend || "bp";
+  const { pts, series, unit } = trendSeries(pid, type);
+  const hasBp = trendSeries(pid, "bp").pts.length > 1, hasGlu = trendSeries(pid, "glucose").pts.length > 1;
+  if (!hasBp && !hasGlu) return "";
+  const seg = `<div class="seg">${[["bp", hasBp], ["glucose", hasGlu]].filter(([, ok]) => ok).map(([k]) => `<button class="${type === k ? "on" : ""}" data-act="trend" data-v="${k}">${esc(t("m_" + k))}</button>`).join("")}</div>`;
+  if (pts.length < 2) return `<section class="card stack">${seg}${emptyState("chart", t("trend_few"), "")}</section>`;
+  const W = 340, H = 190, L = 36, R = 34, T = 14, B = 26;
+  const t0 = new Date(addDays(today(), -30) + "T00:00").getTime(), t1 = Date.now();
+  const all = series.flatMap((sr) => pts.map(sr.get));
+  const ranges = series.map((sr) => usualRange(pts.map(sr.get)));
+  let lo = Math.min(...all, ...ranges.filter(Boolean).flat()), hi = Math.max(...all, ...ranges.filter(Boolean).flat());
+  const step = type === "bp" ? 20 : 25; lo = Math.floor((lo - 5) / step) * step; hi = Math.ceil((hi + 5) / step) * step;
+  const x = (at) => L + ((new Date(at).getTime() - t0) / (t1 - t0)) * (W - L - R), y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+  const ticks = []; for (let v = lo; v <= hi; v += step) ticks.push(v);
+  const grid = ticks.map((v) => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" class="grid"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" class="axis">${fmtNum(v)}</text>`).join("");
+  const xt = [30, 20, 10, 0].map((d) => { const iso = addDays(today(), -d); return `<text x="${x(iso + "T12:00")}" y="${H - 6}" text-anchor="middle" class="axis">${esc(fmtDate(iso, { day: "numeric", month: "short" }))}</text>`; }).join("");
+  const bands = series.map((sr, i) => ranges[i] ? `<rect x="${L}" width="${W - L - R}" y="${y(ranges[i][1])}" height="${Math.max(2, y(ranges[i][0]) - y(ranges[i][1]))}" class="band ${sr.cls}"/>` : "").join("");
+  const lines = series.map((sr) => { const d = pts.map((m, j) => `${j ? "L" : "M"}${x(m.at).toFixed(1)},${y(sr.get(m)).toFixed(1)}`).join(""); return `<path d="${d}" class="line ${sr.cls}"/>` + pts.map((m) => `<circle cx="${x(m.at).toFixed(1)}" cy="${y(sr.get(m)).toFixed(1)}" r="4" class="dot ${sr.cls}"/>`).join(""); }).join("");
+  const lastPt = pts.at(-1);
+  const labels = series.map((sr) => `<text x="${x(lastPt.at) + 8}" y="${y(sr.get(lastPt)) + 4}" class="dlabel">${fmtNum(sr.get(lastPt))}</text>`).join("");
+  const data = pts.map((m) => ({ x: +x(m.at).toFixed(1), d: fmtDate(m.at.slice(0, 10), { weekday: "short", day: "numeric", month: "short" }), v: series.map((sr) => sr.get(m)), src: t("src_" + (m.source || "patient")) }));
+  const latestOut = series.map((sr, i) => ranges[i] && (sr.get(lastPt) > ranges[i][1] ? "above" : sr.get(lastPt) < ranges[i][0] ? "below" : "in")).filter(Boolean);
+  const verdict = latestOut.includes("above") ? "tr_above" : latestOut.includes("below") ? "tr_below" : ranges[0] ? "tr_in" : null;
+  return `<section class="card stack trend-card">
+    <div class="row between wrap"><h3>${esc(t("trends"))}</h3>${seg}</div>
+    ${series.length > 1 ? `<div class="legend">${series.map((sr) => `<span><i class="sw ${sr.cls}"></i>${esc(t("tr_" + sr.key))}</span>`).join("")}<span><i class="sw band-sw"></i>${esc(t("tr_usual"))}</span></div>` : `<div class="legend"><span><i class="sw band-sw"></i>${esc(t("tr_usual"))}</span></div>`}
+    <div class="trend" data-pts='${esc(JSON.stringify(data))}' data-names='${esc(JSON.stringify(series.map((sr) => t("tr_" + sr.key))))}' data-unit="${esc(unit)}">
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(t("trend_aria", { what: t("m_" + type) }))}">${grid}${xt}${bands}${lines}${labels}<line class="xhair" x1="0" x2="0" y1="${T}" y2="${H - B}" visibility="hidden"/></svg>
+      <div class="tip" hidden></div></div>
+    ${verdict ? `<p class="small"><span class="pill ${verdict === "tr_in" ? "good" : "warn"}">${esc(t(verdict + "_pill"))}</span> ${esc(t(verdict, { r: series.map((sr, i) => ranges[i] ? ranges[i].join("–") : "").filter(Boolean).join(" / ") + " " + unit }))}</p>` : ""}
+    ${whyBlock([{ k: "why_usual_range" }, { k: "why_usual_not_target" }], t("tr_how"))}
+    <details class="why"><summary>${icon("grid", "ico-sm")} ${esc(t("tr_table"))}</summary><div class="table-wrap" style="margin-top:8px"><table><thead><tr><th>${esc(t("date"))}</th>${series.map((sr) => `<th>${esc(t("tr_" + sr.key))}</th>`).join("")}<th>${esc(t("source"))}</th></tr></thead><tbody>${[...data].reverse().map((r) => `<tr><td>${esc(r.d)}</td>${r.v.map((v) => `<td class="num">${fmtNum(v)}</td>`).join("")}<td>${esc(r.src)}</td></tr>`).join("")}</tbody></table></div></details>
+  </section>`;
+}
+
+/* ---------- VISIT SUMMARY ---------- */
+function visitPackView() {
+  const a = DB.appointments.find((x) => x.id === UI.route.params.id); if (!a) return shell(emptyState("file", t("not_found")));
+  patientScope(a.patientId);
+  const v = visitPack(a); const c = CLINICS.find((x) => x.id === a.clinicId); const d = DOCTORS.find((x) => x.id === a.doctorId);
+  const consent = DB.profiles[a.patientId].consent?.shareWithClinics;
+  return shell(`${header(t("vp_title"), { back: true })}<div class="page stack-lg">
+    <div class="stack-sm"><span class="eyebrow">${esc(fmtDate(a.date, { weekday: "long", day: "numeric", month: "long" }))} · ${esc(fmtTime(a.time))}</span><h1>${esc(t("vp_title"))}</h1><p class="muted">${esc(doctorName(d))} · ${esc(clinicName(c))}</p></div>
+    <p class="small muted">${esc(t("vp_intro", { date: fmtDate(v.since) }))}</p>
+    <section class="card stack"><h3>${esc(t("my_meds"))}</h3><div class="list">${v.meds.map((m) => `<div class="li"><div class="grow"><b class="small">${esc(m.name)}</b> <span class="xs muted">${esc(m.dose || "")} · ${esc(t("freq_" + m.freq))}</span></div>${m.verified ? `<span class="pill good">${esc(t("clinic_verified"))}</span>` : `<span class="pill plain">${esc(t("self_entered"))}</span>`}</div>`).join("") || `<p class="small muted">${esc(t("no_meds"))}</p>`}</div>${v.adherence != null ? `<p class="small">${esc(t("vp_adherence", { v: v.adherence }))}</p>` : ""}</section>
+    ${v.readings.length ? `<section class="card stack"><h3>${esc(t("latest_measurements"))}</h3><dl class="kv">${v.readings.map((r) => `<dt>${esc(t("m_" + r.type))}</dt><dd class="num">${esc(r.latest)}${r.range ? ` <span class="xs muted">· ${esc(t("vp_usual", { r: r.range }))}</span>` : ""}</dd>`).join("")}</dl></section>` : ""}
+    <section class="card stack"><h3>${esc(t("vp_since"))}</h3><p class="small">${esc(t("vp_checkins", { n: v.checkins, w: v.worse }))}</p>${Object.keys(v.symptoms).length ? `<div class="chips">${Object.entries(v.symptoms).map(([k, n]) => `<span class="pill plain">${esc(t("sym_" + k))} ×${fmtNum(n)}</span>`).join("")}</div>` : ""}</section>
+    <section class="card stack"><h3>${esc(t("vp_questions"))}</h3>
+      <div class="list">${v.questions.map((q, i) => `<div class="li"><span class="grow small">${esc(q)}</span><button class="icon-btn" data-act="vp-q-del" data-i="${i}" aria-label="${esc(t("delete"))}">${icon("x", "ico-sm")}</button></div>`).join("")}</div>
+      <form class="rt-answer" data-form="vp-q"><input class="input" id="vp-q" name="q" placeholder="${esc(t("vp_q_ph"))}" autocomplete="off"><button class="btn" type="submit">${esc(t("add"))}</button></form>
+      <div class="chips">${["ai_q1", "ai_q_meds", "ai_q_last"].map((k) => `<button class="chip sm" data-act="vp-q-add" data-v="${esc(t(k))}">${esc(t(k))}</button>`).join("")}</div></section>
+    <div class="stack">
+      ${isCaregiver() ? "" : consent ? `<button class="btn xl block" data-act="vp-share" data-id="${a.id}">${icon("send", "ico-sm")} ${esc(t(a.pack ? "vp_reshare" : "vp_share"))}</button>${a.pack ? `<p class="small muted center">${esc(t("vp_shared_at", { when: relTime(a.pack.at) }))}</p>` : ""}` : `<div class="banner warn">${icon("lock")}<span class="small">${esc(t("vp_no_consent"))}</span></div>`}
+      <button class="btn secondary block" data-act="vp-copy" data-id="${a.id}">${icon("copy", "ico-sm")} ${esc(t("vp_copy"))}</button>
+    </div>
+    <p class="hint">${esc(t("vp_footer"))}</p>
+  </div>`, { tab: "appointments" });
+}
+
+/* ---------- FITNESS & PERFORMANCE ---------- */
+const WORKOUT_TYPES = ["run", "walk", "football", "gym", "swim", "cycle", "padel", "other"];
+function fitnessHomeCard(pid) {
+  const p = DB.profiles[pid]; const g = p.fitness?.goalMin || 150; const wk = fitnessWeek(pid); const rd = readiness(pid);
+  const pct = Math.min(100, Math.round((wk.min / g) * 100));
+  return `<button class="card tap stack" data-go="fitness"><div class="row between"><span class="eyebrow">${esc(t("fitness"))}</span><span class="pill ${rd.level === "ready" ? "good" : rd.level === "moderate" ? "info" : "warn"}">${esc(t("fit_" + rd.level))}</span></div>
+    <div class="row"><div class="ring" style="--p:${pct}"><span>${fmtNum(pct)}%</span></div><div class="grow"><h3>${esc(t("fit_min_of", { v: fmtNum(wk.min), g: fmtNum(g) }))}</h3><p class="small muted">${esc(t("fit_week_goal"))} · ${esc(t("fit_workouts_n", { n: fmtNum(wk.workouts.length) }))}</p></div>${flipIcon("chevron", "ico-sm")}</div></button>`;
+}
+function fitnessView() {
+  const pid = PID(); const p = DB.profiles[pid]; p.fitness ||= { goalMin: 150, goalSteps: 8000 };
+  const wk = fitnessWeek(pid); const rd = readiness(pid); const g = p.fitness.goalMin;
+  const last = (type, n = 7) => DB.measurements.filter((m) => m.patientId === pid && m.type === type).sort((a, b) => (a.at > b.at ? 1 : -1)).slice(-n);
+  const steps = last("steps"), rhr = last("rhr", 1)[0], sleep = last("sleep");
+  const avg = (a) => (a.length ? a.reduce((x, y) => x + y.value, 0) / a.length : null);
+  const maxMin = Math.max(60, ...wk.days.map((d) => d.min));
+  const recent = (DB.workouts || []).filter((w) => w.patientId === pid).sort((a, b) => (a.at < b.at ? 1 : -1)).slice(0, 6);
+  const pct = Math.min(100, Math.round((wk.min / g) * 100));
+  return shell(`${header(t("fitness"), { back: true })}<div class="page stack-lg">
+    <div class="stack-sm"><h1>${esc(t("fitness"))}</h1><p class="muted">${esc(t("fitness_sub"))}</p></div>
+    <section class="card stack"><div class="row"><div class="ring" style="--p:${pct};width:84px;height:84px"><span style="width:68px;height:68px;font-size:1rem">${fmtNum(pct)}%</span></div><div class="grow"><span class="eyebrow">${esc(t("fit_week_goal"))}</span><h2 class="num">${esc(t("fit_min_of", { v: fmtNum(wk.min), g: fmtNum(g) }))}</h2><p class="xs muted">${esc(t("fit_who_note"))}</p></div></div>
+      <div class="bar-chart" role="img" aria-label="${esc(t("fit_activity_week"))}">${wk.days.map((d) => `<div class="b" title="${esc(fmtDate(d.d, { weekday: "long" }))}: ${fmtNum(d.min)} ${esc(t("minutes_short"))}"><span class="num">${d.min && (d.d === today() || d.min === maxMin) ? fmtNum(d.min) : ""}</span><i style="height:${Math.max(3, Math.round((d.min / maxMin) * 80))}%;${d.min ? "" : "opacity:.25"}"></i><span>${esc(fmtDate(d.d, { weekday: "narrow" }))}</span></div>`).join("")}</div></section>
+    <section class="level-card ${rd.level === "recover" ? "amber" : ""} stack"><div class="row between"><span class="eyebrow">${esc(t("fit_readiness"))}</span><span class="pill plain">${esc(t("wellness_guidance"))}</span></div>
+      <h3>${esc(t("fit_" + rd.level))}</h3><p class="small muted">${esc(t("fit_" + rd.level + "_d"))}</p>${whyBlock(rd.reasons)}</section>
+    <div class="grid-2">
+      <div class="tile"><span class="xs faint">${esc(t("fit_steps_avg"))}</span><span class="big">${steps.length ? fmtNum(Math.round(avg(steps))) : "—"}</span><span class="xs faint">${esc(t("fit_goal_of", { g: fmtNum(p.fitness.goalSteps) }))} · ${esc(t("src_device"))}</span></div>
+      <div class="tile"><span class="xs faint">${esc(t("fit_rest_hr"))}</span><span class="big">${rhr ? fmtNum(rhr.value) : "—"} <span class="xs faint">${esc(t("bpm"))}</span></span><span class="xs faint">${rhr ? esc(relDays(rhr.at)) : esc(t("no_data"))}</span></div>
+      <div class="tile"><span class="xs faint">${esc(t("fit_sleep_avg"))}</span><span class="big">${sleep.length ? fmtNum(avg(sleep), { maximumFractionDigits: 1 }) : "—"} <span class="xs faint">${esc(t("hours_short"))}</span></span><span class="xs faint">${esc(t("per_week"))}</span></div>
+      <div class="tile"><span class="xs faint">${esc(t("fit_workouts"))}</span><span class="big">${fmtNum(wk.workouts.length)}</span><span class="xs faint">${esc(t("this_week"))}</span></div>
+    </div>
+    <button class="btn xl block" data-act="fit-log">${icon("plus", "ico-sm")} ${esc(t("fit_log"))}</button>
+    <section class="stack"><h3>${esc(t("fit_recent"))}</h3>${recent.length ? `<div class="card list-card">${recent.map((w) => `<div class="li"><div class="iconwrap">${icon("activity", "ico-sm")}</div><div class="grow"><b class="small">${esc(t("wt_" + w.type))}</b><p class="xs muted">${esc(fmtDate(w.at.slice(0, 10)))} · ${fmtNum(w.min)} ${esc(t("minutes_short"))} · RPE ${fmtNum(w.rpe)}/10</p></div></div>`).join("")}</div>` : emptyState("activity", t("fit_none"), t("fit_none_d"))}</section>
+    <details class="card fold" id="fold-fitgoals"><summary><span class="iconwrap">${icon("settings", "ico-sm")}</span><h4 class="grow">${esc(t("fit_goals"))}</h4>${icon("chevron", "ico-sm fold-ico")}</summary><form class="stack fold-body" data-form="fit-goals">
+      <div class="grid-2">${field("fg-min", t("fit_goal_min"), `<input class="input" id="fg-min" name="min" type="number" min="30" max="1500" value="${g}">`)}${field("fg-steps", t("fit_goal_steps"), `<input class="input" id="fg-steps" name="steps" type="number" min="1000" max="40000" step="500" value="${p.fitness.goalSteps}">`)}</div>
+      <div><button class="btn sm" type="submit">${esc(t("save"))}</button></div></form></details>
+  </div>`, { tab: "health" });
+}
+function workoutSheet() {
+  const w = UI.wk ??= { type: "run", min: 30, rpe: 6 };
+  return `<form class="stack" data-form="workout"><h3>${esc(t("fit_log_title"))}</h3>
+    <span class="label">${esc(t("fit_type"))}</span><div class="chips">${WORKOUT_TYPES.map((k) => `<button type="button" class="chip sm ${w.type === k ? "on" : ""}" data-act="wk-type" data-v="${k}">${esc(t("wt_" + k))}</button>`).join("")}</div>
+    ${field("wk-min", t("fit_duration"), `<input class="input" id="wk-min" name="min" type="number" min="5" max="600" value="${w.min}" inputmode="numeric">`)}
+    ${field("wk-rpe", t("fit_intensity"), `<div class="row"><input type="range" id="wk-rpe" name="rpe" min="1" max="10" value="${w.rpe}" class="grow"><b class="num" id="wk-rpe-v">${w.rpe}/10</b></div>`, t("fit_rpe_hint"))}
+    <button class="btn block" type="submit">${esc(t("save"))}</button></form>`;
+}
+
 const PATIENT_VIEWS = {
   home: homeView, discover: discoverView, clinic: clinicProfileView, book: bookView, "appt-done": apptDoneView, appointments: appointmentsView,
-  meds: medsView, "med-edit": medEditView, routine: routineView, health: healthView, measure: measureView, checkin: checkinView, summary: summaryView, timeline: timelineView,
+  meds: medsView, "med-edit": medEditView, routine: routineView, "visit-pack": visitPackView, fitness: fitnessView, health: healthView, measure: measureView, checkin: checkinView, summary: summaryView, timeline: timelineView,
   journal: journalView, documents: documentsView, ai: aiView, notifications: notificationsView, profile: profileView, "profile-edit": profileEditView,
   caregiver: caregiverView, settings: settingsView, plus: plusView, emails: emailsView, platform: () => platformView()
 };
@@ -3401,7 +3715,9 @@ function clinicPatientSheet(pid) {
   }
   return `<div class="stack"><div class="row"><div class="avatar">${esc(initials(patientName(pid)))}</div><div class="grow"><h3>${esc(patientName(pid))}</h3><p class="xs muted">${esc(t("visible_to_role", { role: t("sr_" + App.user.staffRole) }))}</p></div></div>
     <h4>${esc(t("tab_appts"))}</h4><div class="list">${appts.map((a) => `<div class="li"><span class="grow small">${esc(fmtDate(a.date))} ${esc(fmtTime(a.time))} · ${esc(t("sp_" + a.specialty))}</span>${statusPill(a.status)}</div>`).join("")}</div>
-    <h4>${esc(t("clinical_info"))}</h4>${clin}<p class="hint">${esc(t("access_logged"))}</p><button class="btn secondary" data-act="sheet-close">${esc(t("close"))}</button></div>`;
+    <h4>${esc(t("clinical_info"))}</h4>${clin}
+    ${(() => { const pk = appts.find((a) => a.pack); return pk && consent ? `<h4>${esc(t("vp_from_patient"))}</h4><p class="xs muted">${esc(fmtDate(pk.date))} · ${esc(relTime(pk.pack.at))}</p><pre class="vp-pre">${esc(pk.pack.text)}</pre>` : ""; })()}
+    <p class="hint">${esc(t("access_logged"))}</p><button class="btn secondary" data-act="sheet-close">${esc(t("close"))}</button></div>`;
 }
 function postVisitSheet(a) {
   return `<form class="stack" data-form="c-update" data-id="${a.id}" novalidate><h3>${esc(t("post_visit"))}</h3><p class="small muted">${esc(patientName(a.patientId))} · ${esc(fmtDate(a.date))}</p>
@@ -3627,6 +3943,20 @@ const ACTIONS = {
   "test-alarm": () => { const it = scheduleFor(PID()).find((i) => i.status !== "taken") || scheduleFor(PID())[0]; if (!it) return; showAlarm({ medId: it.med.id, time: it.time, key: "test" }); },
   "alarm-pref": (el) => { const pr = DB.profiles[App.user.id].prefs; pr[el.dataset.k] = pr[el.dataset.k] === false; saveDB(); render(); },
   "alarm-perm": async () => { if (!("Notification" in window)) { toast(t("alarm_denied"), "info"); return; } try { const r = await Notification.requestPermission(); toast(t(r === "granted" ? "alarm_enabled" : "alarm_denied"), r === "granted" ? "bell" : "info"); } catch { toast(t("alarm_denied"), "info"); } render(); },
+  "fit-log": () => { UI.wk = null; openSheet(workoutSheet); },
+  "wk-type": (el) => { UI.wk.type = el.dataset.v; UI.wk.min = +($("#wk-min")?.value || UI.wk.min); UI.wk.rpe = +($("#wk-rpe")?.value || UI.wk.rpe); renderLayer(); },
+  trend: (el) => { UI.trend = el.dataset.v; render(); },
+  refilled: (el) => { const m = DB.medications.find((x) => x.id === el.dataset.id); m.supply.left = (m.supply.left || 0) + (m.supply.pack || 30); DB.timeline.push({ id: uid("tl"), patientId: m.patientId, at: new Date().toISOString(), type: "medication", msg: { k: "tl_refill", p: { med: m.name } }, source: "patient" }); saveDB(); toast(t("refill_saved")); render(); },
+  "vp-q-add": (el) => { const a = DB.appointments.find((x) => x.id === UI.route.params.id); (a.questions ||= []).push(el.dataset.v); saveDB(); render(); },
+  "vp-q-del": (el) => { const a = DB.appointments.find((x) => x.id === UI.route.params.id); a.questions.splice(Number(el.dataset.i), 1); saveDB(); render(); },
+  "vp-copy": (el) => copyText(visitPackText(DB.appointments.find((x) => x.id === el.dataset.id))),
+  "vp-share": (el) => {
+    const a = DB.appointments.find((x) => x.id === el.dataset.id); const c = CLINICS.find((x) => x.id === a.clinicId);
+    if (!DB.profiles[a.patientId].consent?.shareWithClinics) { toast(t("vp_no_consent"), "lock"); return; }
+    a.pack = { at: new Date().toISOString(), text: visitPackText(a) };
+    DB.timeline.push({ id: uid("tl"), patientId: a.patientId, at: a.pack.at, type: "document", msg: { k: "tl_vp_shared", p: { clinic: c.name } }, source: "patient" });
+    audit("au_vp_shared", a.patientId); saveDB(); toast(t("vp_shared")); render();
+  },
   "clock-all": () => { const items = scheduleFor(PID()).map((i) => ({ med: i.med, time: i.time })); UI.clockItems = items; openSheet(() => clockSheet(items)); },
   "clock-ics": async () => {
     const ics = icsForDoses(UI.clockItems || []);
@@ -3766,7 +4096,9 @@ const FORMS = {
     if (!f.name.trim()) { toast(t("err_med_name"), "alert"); $("#m-name")?.focus(); return; }
     if (f.end && f.start && f.end < f.start) { toast(t("err_end_before"), "alert"); return; }
     const rec = { name: f.name.trim(), dose: f.dose.trim(), frequency: f.frequency, times: [...f.times].sort(), food: f.food, start: f.start, end: f.end, notes: f.notes, doctor: f.doctor, clinic: f.clinic };
-    if (f.id) { const m = DB.medications.find((x) => x.id === f.id); if (m.verified) { Object.assign(m, { times: rec.times, notes: rec.notes, end: rec.end }); } else Object.assign(m, rec); DB.timeline.push({ id: uid("tl"), patientId: pid, at: new Date().toISOString(), type: "medication", msg: { k: "tl_med_changed", p: { med: m.name } }, source: "patient" }); }
+    const sl = f.supplyLeft === "" || f.supplyLeft == null ? null : Math.max(0, Math.round(+f.supplyLeft)), sp = f.supplyPack === "" || f.supplyPack == null ? null : Math.max(1, Math.round(+f.supplyPack));
+    rec.supply = sl == null ? null : { left: sl, pack: sp || sl, perDose: 1 };
+    if (f.id) { const m = DB.medications.find((x) => x.id === f.id); if (m.verified) { Object.assign(m, { times: rec.times, notes: rec.notes, end: rec.end, supply: rec.supply }); } else Object.assign(m, rec); DB.timeline.push({ id: uid("tl"), patientId: pid, at: new Date().toISOString(), type: "medication", msg: { k: "tl_med_changed", p: { med: m.name } }, source: "patient" }); }
     else { DB.medications.push({ id: uid("med"), patientId: pid, ...rec, source: "patient", verified: false, active: true, createdAt: new Date().toISOString() }); DB.timeline.push({ id: uid("tl"), patientId: pid, at: new Date().toISOString(), type: "medication", msg: { k: "tl_med_added", p: { med: rec.name } }, source: "patient" }); notify(pid, "medications", { k: "n_med_added", p: { med: rec.name } }, { silent: true }); }
     saveDB(); UI.medForm = null; toast(t("saved")); back("meds");
   },
@@ -3782,6 +4114,15 @@ const FORMS = {
     if (bp || glucose) { const res = evaluateRules({ profile: PROF(), bp, glucose }); render(); $("#meas-result").innerHTML = levelCard(res, res.level === "green" ? "" : `<div><button class="btn sm" data-act="book-followup">${esc(t("book_followup"))}</button></div>`); }
     else { render(); toast(t("saved")); }
   },
+  workout: (form) => {
+    const min = Math.round(+form.querySelector("#wk-min").value), rpe = Math.round(+form.querySelector("#wk-rpe").value);
+    if (!(min >= 5 && min <= 600)) { toast(t("err_value_range"), "alert"); return; }
+    const pid = PID(); (DB.workouts ||= []).push({ id: uid("w"), patientId: pid, at: new Date().toISOString(), type: UI.wk.type, min, rpe, notes: "" });
+    DB.timeline.push({ id: uid("tl"), patientId: pid, at: new Date().toISOString(), type: "measure", msg: { k: "tl_workout", p: { type: { k: "wt_" + UI.wk.type }, min } }, source: "patient" });
+    saveDB(); closeSheet(); toast(t("fit_saved")); render();
+  },
+  "fit-goals": (form) => { const p = DB.profiles[PID()]; const a = +form.querySelector("#fg-min").value, b = +form.querySelector("#fg-steps").value; if (!(a >= 30 && b >= 1000)) { toast(t("err_value_range"), "alert"); return; } p.fitness = { goalMin: Math.round(a), goalSteps: Math.round(b) }; saveDB(); toast(t("fit_goal_saved")); render(); },
+  "vp-q": (form) => { const v = form.querySelector("#vp-q").value.trim(); if (!v) return; const a = DB.appointments.find((x) => x.id === UI.route.params.id); (a.questions ||= []).push(v); saveDB(); render(); setTimeout(() => $("#vp-q")?.focus(), 30); },
   chat(form) { const q = form.querySelector("#chat-in").value; form.querySelector("#chat-in").value = ""; askAI(q); },
   profile(form) {
     const f = UI.pf, me = DB.profiles[App.user.id];
@@ -3834,6 +4175,7 @@ document.addEventListener("click", (ev) => {
   Ring.unlock();
   const el = ev.target.closest("[data-go],[data-act]"); if (!el) return;
   if (el.dataset.act) {
+    if (el.dataset.act === "scrim" && ev.target !== el) return; // clicks inside a sheet are not backdrop clicks
     const fn = ACTIONS[el.dataset.act]; if (!fn) return;
     if (el.tagName === "A") return;
     ev.preventDefault(); Promise.resolve(fn(el, ev)).catch((e) => { console.error(e); toast(errMsg(e), "alert"); }); return;
@@ -3852,7 +4194,8 @@ document.addEventListener("click", (ev) => {
   if (r === "settings" && el.dataset.v) setTimeout(() => document.getElementById(el.dataset.v)?.scrollIntoView({ block: "start" }), 50);
 });
 document.addEventListener("input", (ev) => {
-  const el = ev.target; const b = el.dataset?.bind; if (!b) return;
+  const el = ev.target;
+  if (el.id === "wk-rpe") { const o = $("#wk-rpe-v"); if (o) o.textContent = el.value + "/10"; } const b = el.dataset?.bind; if (!b) return;
   const parts = b.split(".");
   if (parts.length >= 3 && /^\d+$/.test(parts.at(-1))) { getPath(UI, parts.slice(0, -1).join("."))[Number(parts.at(-1))] = el.value; }
   else setPath(UI, b, el.value);
@@ -3866,6 +4209,7 @@ document.addEventListener("change", (ev) => {
   if (ac === "pref-time") { DB.profiles[App.user.id].prefs[el.dataset.k] = el.value; saveDB(); toast(t("saved")); }
   if (ac === "doc-recat") { const d = DB.documents.find((x) => x.id === el.dataset.id); d.cat = el.value; saveDB(); toast(t("saved")); render(); }
   if (el.id === "doc-file" && el.files?.[0]) handleUpload(el.files[0]);
+  if (el.id === "scan-file" && el.files?.[0]) scanMedication(el.files[0]);
 });
 document.addEventListener("submit", (ev) => {
   const f = ev.target.closest("[data-form]"); if (!f) return; ev.preventDefault();
@@ -3878,12 +4222,47 @@ window.addEventListener("scroll", () => {
   else if (y < lastScrollY - 8 || y < 140) document.body.classList.remove("bar-hidden");
   if (Math.abs(y - lastScrollY) > 8) lastScrollY = y;
 }, { passive: true });
+document.addEventListener("pointermove", (ev) => trendHover(ev));
+document.addEventListener("pointerdown", (ev) => trendHover(ev));
+function trendHover(ev) {
+  const box = ev.target.closest?.(".trend");
+  $$(".trend").forEach((b) => { if (b !== box) { const tip = b.querySelector(".tip"); if (tip) tip.hidden = true; b.querySelector(".xhair")?.setAttribute("visibility", "hidden"); } });
+  if (!box) return;
+  const svg = box.querySelector("svg"), tip = box.querySelector(".tip"); const pts = JSON.parse(box.dataset.pts), names = JSON.parse(box.dataset.names);
+  const r = svg.getBoundingClientRect(); const vx = ((ev.clientX - r.left) / r.width) * svg.viewBox.baseVal.width;
+  let best = pts[0]; for (const p of pts) if (Math.abs(p.x - vx) < Math.abs(best.x - vx)) best = p;
+  const xh = box.querySelector(".xhair"); xh.setAttribute("x1", best.x); xh.setAttribute("x2", best.x); xh.setAttribute("visibility", "visible");
+  tip.innerHTML = `<b>${esc(best.d)}</b>${best.v.map((v, i) => `<span><i class="sw s${i + 1}"></i>${esc(names[i])} <b class="num">${fmtNum(v)}</b> ${esc(box.dataset.unit)}</span>`).join("")}<span class="xs faint">${esc(best.src)}</span>`;
+  tip.hidden = false; const px = (best.x / svg.viewBox.baseVal.width) * r.width; const w = tip.offsetWidth;
+  tip.style.left = Math.min(Math.max(px - w / 2, 0), r.width - w) + "px";
+}
 document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && UI.sheet) closeSheet(); });
 ["dragover", "dragleave", "drop"].forEach((type) => document.addEventListener(type, (ev) => {
   const dz = ev.target.closest?.("#dropzone"); if (!dz) return; ev.preventDefault();
   dz.classList.toggle("over", type === "dragover");
   if (type === "drop" && ev.dataTransfer.files[0]) handleUpload(ev.dataTransfer.files[0]);
 }));
+async function scanMedication(file) {
+  const f = UI.medForm; if (!f) return;
+  const sample = UI.aiLive ? await window.claude.use("sample").catch(() => null) : null;
+  const caps = sample ? await sample.limits().catch(() => null) : null;
+  if (!sample || !caps?.images) { toast(t("scan_unavailable"), "info"); return; }
+  f.scanning = true; render();
+  const prompt = `Read this photo of a medicine box, label or prescription. Reply with only JSON: {"name": string, "dose": string, "frequency": "once"|"twice"|"thrice"|"four"|"weekly"|"as_needed"|"", "food": "before"|"after"|"with"|"any"|"", "notes": string}.
+Rules: copy ONLY what is printed. Never guess or infer a dose or frequency; use "" for anything not clearly printed. "dose" is the strength and amount per dose as printed (e.g. "500 mg · 1 tablet"). "notes" may hold other printed directions (max 120 chars). If the photo is not a medication, return all fields "".`;
+  try {
+    const r = await sample.json(prompt, { images: file, modelTier: "quick" });
+    const unread = [];
+    if (r?.name) f.name = String(r.name).slice(0, 80); else unread.push("med_name");
+    if (r?.dose) f.dose = String(r.dose).slice(0, 60); else unread.push("dose");
+    if (FREQ_COUNT[r?.frequency] != null) f.frequency = r.frequency; else unread.push("frequency");
+    if (["before", "after", "with", "any"].includes(r?.food)) f.food = r.food; else unread.push("food");
+    if (r?.notes) f.notes = String(r.notes).slice(0, 160);
+    f.scanned = { unread }; f.suggest = null;
+    toast(t(r?.name ? "scan_done" : "scan_none"), r?.name ? "sparkle" : "info");
+  } catch (e) { toast(t(e?.code === "image_rejected" ? "err_file_type" : "scan_failed"), "alert"); }
+  f.scanning = false; render();
+}
 function handleUpload(file) {
   if (!/^image\/|application\/pdf/.test(file.type)) { toast(t("err_file_type"), "alert"); return; }
   if (file.size > 1.5 * 1024 * 1024) { toast(t("err_file_size"), "alert"); return; }
@@ -3904,7 +4283,7 @@ async function boot() {
   const saved = safeStore.get("wellpoint.lang") || (navigator.language || "en").slice(0, 2);
   setLang(["en", "ar", "zh"].includes(saved) ? saved : "en");
   DB = loadDB();
-  if (!DB || DB.version !== 3) { await seedDB(); saveDB(); }
+  if (!DB || DB.version !== 4) { await seedDB(); saveDB(); }
   if (api.auth.restore()) { const p = DB.profiles[App.user.id]; if (p?.lang) setLang(p.lang); UI.route = { name: "home", params: {} }; }
   render();
   setInterval(reminderTick, 20000); setTimeout(reminderTick, 1500);

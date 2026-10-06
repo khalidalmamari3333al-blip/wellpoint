@@ -109,7 +109,8 @@ function homeView() {
   const aiCard = `<button class="card tap row reveal" data-go="ai"><div class="iconwrap">${icon("sparkle")}</div><div class="grow"><b>${esc(t("ask_ai"))}</b><p class="small muted">${esc(t(chronic ? "ai_hint_chronic" : "ai_hint_general"))}</p></div>${flipIcon("chevron", "ico-sm")}</button>`;
 
   const quiet = `<div class="quiet-links">${allow("appts") ? `<button class="quiet-link" data-go="discover">${icon("search", "ico-sm")}<span>${esc(t("find_care"))}</span>${flipIcon("chevron", "ico-sm")}</button>` : ""}<button class="quiet-link" data-go="ai">${icon("sparkle", "ico-sm")}<span>${esc(t("ask_ai"))}</span>${flipIcon("chevron", "ico-sm")}</button>${tasks.length ? `<button class="quiet-link" data-go="${tasks[0][2]}">${icon(tasks[0][0], "ico-sm")}<span>${esc(tasks[0][1])}</span>${flipIcon("chevron", "ico-sm")}</button>` : ""}</div>`;
-  const order = chronic ? [staleCard, medCard, nextCard, focusCard, quiet] : [nextCard, medCard, focusCard, quiet];
+  const fitCard = !isCaregiver() && (p.mode === "fitness" || (DB.workouts || []).some((w) => w.patientId === pid)) ? fitnessHomeCard(pid) : "";
+  const order = chronic ? [staleCard, medCard, nextCard, focusCard, quiet] : p.mode === "fitness" ? [fitCard, nextCard, focusCard, medCard, quiet] : [nextCard, medCard, fitCard, focusCard, quiet];
   const name = isCaregiver() ? firstName(me.name || App.user.name) : firstName(p.name);
   return shell(`${header("")}
   <div class="page stack-lg">
@@ -345,6 +346,7 @@ function apptSheet(a) {
     <dl class="kv"><dt>${esc(t("clinic"))}</dt><dd>${esc(clinicName(c))}</dd><dt>${esc(t("doctor"))}</dt><dd>${esc(doctorName(d))}</dd><dt>${esc(t("specialty"))}</dt><dd>${esc(t("sp_" + a.specialty))}</dd><dt>${esc(t("location"))}</dt><dd>${esc(c.area)}, ${esc(t("gov_" + c.gov))}</dd><dt>${esc(t("appt_type"))}</dt><dd>${esc(t("at_" + a.type))}</dd><dt>${esc(t("notes"))}</dt><dd>${esc(a.notes || "—")}</dd></dl>
     ${upcoming ? `<div class="grid-2"><button class="btn secondary" data-act="ics" data-id="${a.id}">${icon("calendar", "ico-sm")} ${esc(t("add_calendar"))}</button><a class="btn secondary" href="${mapUrl}" target="_blank" rel="noopener">${icon("pin", "ico-sm")} ${esc(t("directions"))}</a>
       <button class="btn secondary" data-act="call" data-v="${esc(c.phone)}">${icon("phone", "ico-sm")} ${esc(t("contact_clinic"))}</button><button class="btn secondary" data-act="appt-resched" data-id="${a.id}">${icon("refresh", "ico-sm")} ${esc(t("reschedule"))}</button></div>
+      <button class="btn" data-go="visit-pack" data-id="${a.id}">${icon("file", "ico-sm")} ${esc(t(a.pack ? "vp_open_shared" : "vp_prepare"))}</button>
       <button class="btn ghost" style="color:var(--bad)" data-act="appt-cancel" data-id="${a.id}">${esc(t("cancel_appt"))}</button>` : `<button class="btn secondary" data-act="book-doc" data-id="${d.id}">${esc(t("book_again"))}</button>`}
     <details class="why"><summary>${icon("clock", "ico-sm")} ${esc(t("history"))}</summary><ul>${a.history.map((h) => `<li>${esc(fmtDate(h.at.slice(0, 10)))} — ${esc(t("st_" + h.status))}</li>`).join("")}</ul></details></div>`;
 }
@@ -363,13 +365,14 @@ function medsView() {
   <div class="page stack-lg">
     ${caregiverBanner()}
     <div class="row between"><h1>${esc(t("tab_meds"))}</h1>${allow("meds") && !isCaregiver() ? `<button class="btn sm" data-go="med-edit">${icon("plus", "ico-sm")} ${esc(t("add"))}</button>` : ""}</div>
+    ${meds.filter((m) => { const d = supplyDays(m); return d != null && d <= 5; }).map((m) => `<div class="banner warn">${icon("pill")}<div class="grow stack-sm"><b>${esc(t("refill_soon", { med: m.name, n: fmtNum(supplyDays(m)) }))}</b><span class="small">${esc(t("refill_soon_d"))}</span>${isCaregiver() ? "" : `<div><button class="btn sm" data-act="refilled" data-id="${m.id}">${esc(t("refilled", { n: fmtNum(m.supply.pack || 30) }))}</button></div>`}</div></div>`).join("")}
     ${meds.length ? `<section class="card stack">
       <div class="row"><div class="ring" style="--p:${sched.length ? Math.round((taken / sched.length) * 100) : 0}"><span>${fmtNum(taken)}/${fmtNum(sched.length)}</span></div><div class="grow"><h3>${esc(t("today_schedule"))}</h3><p class="small muted">${adh != null ? esc(t("adherence_7d", { v: fmtNum(adh) })) : ""}</p></div></div>
       <div>${sched.map((i) => `<div class="dose ${i.status}"><span class="t">${esc(fmtTime(i.time))}</span><div class="grow"><h4>${esc(i.med.name)}</h4><p class="xs muted">${esc(i.med.dose || "")} · ${esc(t("food_" + i.med.food))}</p></div>
         ${i.status === "taken" ? `<span class="pill good">${esc(t("taken"))}</span>` : `<div class="row" style="gap:6px">${i.status === "missed" ? `<span class="pill bad">${esc(t("missed"))}</span>` : ""}<button class="btn sm good" data-act="dose" data-med="${i.med.id}" data-time="${i.time}" data-s="taken" aria-label="${esc(t("taken"))}">${icon("check", "ico-sm")}</button></div>`}</div>`).join("") || `<p class="muted small">${esc(t("nothing_today"))}</p>`}</div>
       <div class="row wrap"><button class="btn sm" data-go="routine">${icon("sparkle", "ico-sm")} ${esc(t("rt_cta"))}</button><button class="btn sm secondary" data-act="clock-all">${icon("clock", "ico-sm")} ${esc(t("clk_btn"))}</button></div>
     </section>
-    <section class="stack"><h3>${esc(t("my_meds"))}</h3>${meds.map((m) => `<button class="card tap row reveal" ${isCaregiver() ? "" : `data-go="med-edit" data-id="${m.id}"`}><div class="iconwrap">${icon("pill")}</div><div class="grow"><div class="row wrap" style="gap:6px"><h4>${esc(m.name)}</h4>${m.verified ? `<span class="pill good">${esc(t("clinic_verified"))}</span>` : `<span class="pill plain">${esc(t("self_entered"))}</span>`}</div><p class="small muted">${esc(m.dose || "—")} · ${esc(t("freq_" + m.frequency))}</p><p class="xs faint num">${m.times.map(fmtTime).join(" · ")}</p></div>${isCaregiver() ? "" : flipIcon("chevron", "ico-sm")}</button>`).join("")}</section>`
+    <section class="stack"><h3>${esc(t("my_meds"))}</h3>${meds.map((m) => `<button class="card tap row reveal" ${isCaregiver() ? "" : `data-go="med-edit" data-id="${m.id}"`}><div class="iconwrap">${icon("pill")}</div><div class="grow"><div class="row wrap" style="gap:6px"><h4>${esc(m.name)}</h4>${m.verified ? `<span class="pill good">${esc(t("clinic_verified"))}</span>` : `<span class="pill plain">${esc(t("self_entered"))}</span>`}</div><p class="small muted">${esc(m.dose || "—")} · ${esc(t("freq_" + m.frequency))}</p><p class="xs faint num">${m.times.map(fmtTime).join(" · ")}${supplyDays(m) != null ? ` · <span class="pill ${supplyDays(m) <= 5 ? "warn" : "plain"}">${esc(t("days_left", { n: fmtNum(supplyDays(m)) }))}</span>` : ""}</p></div>${isCaregiver() ? "" : flipIcon("chevron", "ico-sm")}</button>`).join("")}</section>`
     : emptyState("pill", t("no_meds"), t("no_meds_d"), isCaregiver() ? "" : `<button class="btn" data-go="med-edit">${icon("plus", "ico-sm")} ${esc(t("add_first_med"))}</button>`)}
     ${meds.length && !isCaregiver() ? alarmSettings() : ""}
     <div class="banner">${icon("shield")}<span class="small">${esc(t("med_safety"))}</span></div>
@@ -389,7 +392,7 @@ function medEditView() {
   const pid = PID(); const id = UI.route.params.id;
   if (!UI.medForm || UI.medForm._for !== (id || "new")) {
     const m = id ? DB.medications.find((x) => x.id === id) : null;
-    UI.medForm = m ? { ...m, times: [...m.times], _for: id } : { _for: "new", name: "", dose: "", frequency: "once", times: ["08:00"], food: "any", start: today(), end: "", notes: "", doctor: "", clinic: "", verified: false, source: "patient" };
+    UI.medForm = m ? { ...m, times: [...m.times], _for: id, supplyLeft: m.supply?.left ?? "", supplyPack: m.supply?.pack ?? "" } : { _for: "new", name: "", dose: "", frequency: "once", times: ["08:00"], food: "any", start: today(), end: "", notes: "", doctor: "", clinic: "", verified: false, source: "patient" };
     UI.medForm.suggest = null;
   }
   const f = UI.medForm; const n = FREQ_COUNT[f.frequency];
@@ -399,6 +402,9 @@ function medEditView() {
   return shell(`${header(id ? t("edit_med") : t("add_med"), { back: true })}
   <div class="page stack-lg">
     ${locked ? `<div class="banner good">${icon("shield")}<span class="small">${esc(t("verified_locked"))}</span></div>` : ""}
+    ${locked ? "" : `<section class="card tint stack"><div class="row"><div class="iconwrap">${icon("sparkle")}</div><div class="grow"><b>${esc(t("scan_title"))}</b><p class="small muted">${esc(t("scan_d"))}</p></div></div>
+      <label class="btn secondary" for="scan-file">${icon("upload", "ico-sm")} ${esc(t(f.scanning ? "scan_reading" : "scan_btn"))}</label><input type="file" id="scan-file" accept="image/*" capture="environment" hidden ${f.scanning ? "disabled" : ""}>
+      ${f.scanned ? `<div class="banner warn">${icon("alert")}<span class="small">${esc(t("scan_check"))}${f.scanned.unread?.length ? " " + esc(t("scan_unread", { list: f.scanned.unread.map((k) => t(k)).join(", ") })) : ""}</span></div>` : ""}</section>`}
     <form class="stack" data-form="med" novalidate>
       ${field("m-name", t("med_name"), inputEl("m-name", "medForm.name", { attrs: locked ? "readonly" : "required" }))}
       ${field("m-dose", t("dose"), inputEl("m-dose", "medForm.dose", { placeholder: t("dose_ph"), attrs: locked ? "readonly" : "" }), t("dose_hint"))}
@@ -410,6 +416,8 @@ function medEditView() {
       </section>` : `<p class="hint">${esc(t("prn_note"))}</p>`}
       <div class="grid-2">${field("m-start", t("start_date"), inputEl("m-start", "medForm.start", { type: "date" }))}${field("m-end", t("end_date_opt"), inputEl("m-end", "medForm.end", { type: "date" }))}</div>
       <div class="grid-2">${field("m-doc", t("prescribing_doctor"), selectEl("m-doc", "medForm.doctor", [["", "—"], ...DOCTORS.map((d) => [d.id, doctorName(d)])]))}${field("m-clinic", t("prescribing_clinic"), selectEl("m-clinic", "medForm.clinic", [["", "—"], ...CLINICS.map((c) => [c.id, clinicName(c)])]))}</div>
+      <div class="grid-2">${field("m-left", t("pills_left"), inputEl("m-left", "medForm.supplyLeft", { type: "number", attrs: 'inputmode="numeric" min="0"' }))}${field("m-pack", t("pack_size"), inputEl("m-pack", "medForm.supplyPack", { type: "number", attrs: 'inputmode="numeric" min="1"' }))}</div>
+      <p class="hint">${esc(t("supply_hint"))}</p>
       ${field("m-notes", t("notes"), `<textarea class="input" id="m-notes" data-bind="medForm.notes">${esc(f.notes || "")}</textarea>`)}
       <button class="btn xl block" type="submit">${esc(t("save"))}</button>
       ${id ? `<button type="button" class="btn ghost" style="color:var(--bad)" data-act="med-delete" data-id="${id}">${esc(t("remove_med"))}</button>` : ""}
@@ -463,7 +471,8 @@ function healthView() {
       ${whyBlock([{ k: "why_freshness" }, { k: "why_stale_not_worse" }], t("what_is_this"))}</section>
     <section class="stack"><div class="row between"><h3>${esc(t("latest_measurements"))}</h3><button class="btn sm secondary" data-go="measure">${icon("plus", "ico-sm")} ${esc(t("add"))}</button></div>
       ${tiles.length ? `<div class="grid-2">${tiles.map(([m, k, f, u]) => `<div class="tile"><span class="xs faint">${esc(t(k))}</span><span class="big">${esc(f(m))} <span class="xs faint">${esc(u)}</span></span><span class="xs faint">${esc(relDays(m.at))} · ${esc(t("src_" + (m.source || "patient")))}</span></div>`).join("")}</div>` : emptyState("activity", t("no_measurements"), t("no_measurements_d"))}</section>
-    <nav class="card list-card">${[["summary", "chart", "health_summary"], ["timeline", "activity", "health_timeline"], ["journal", "journal", "journal"], ...(allow("docs") ? [["documents", "file", "documents"]] : [])].map(([r, ic, k]) => `<button class="quiet-link" data-go="${r}">${icon(ic, "ico-sm")}<span>${esc(t(k))}</span>${flipIcon("chevron", "ico-sm")}</button>`).join("")}</nav>
+    ${trendCard(pid)}
+    <nav class="card list-card">${[["fitness", "activity", "fitness"], ["summary", "chart", "health_summary"], ["timeline", "activity", "health_timeline"], ["journal", "journal", "journal"], ...(allow("docs") ? [["documents", "file", "documents"]] : [])].map(([r, ic, k]) => `<button class="quiet-link" data-go="${r}">${icon(ic, "ico-sm")}<span>${esc(t(k))}</span>${flipIcon("chevron", "ico-sm")}</button>`).join("")}</nav>
     <details class="card fold reveal" id="fold-sources"><summary><span class="iconwrap">${icon("link", "ico-sm")}</span><h4 class="grow">${esc(t("connected_sources"))}</h4>${icon("chevron", "ico-sm fold-ico")}</summary><div class="stack fold-body"><p class="small muted">${esc(t("connected_sources_d"))}</p>
       <div class="list">${ints.map((i) => { const c = CLINICS.find((x) => x.id === i.clinicId); return `<div class="li"><div class="iconwrap">${icon("link")}</div><div class="grow"><b>${esc(clinicName(c))}</b><p class="xs muted">${esc(t(Adapters[i.adapter].label))} · ${i.lastSync ? esc(t("synced", { when: relDays(i.lastSync) })) : esc(t("not_synced"))}</p></div>${i.status === "connected" && i.adapter !== "manual" ? `<button class="btn sm secondary" data-act="sync" data-c="${i.clinicId}">${icon("refresh", "ico-sm")} ${esc(t("sync"))}</button>` : i.status === "available" ? `<button class="btn sm" data-act="connect" data-c="${i.clinicId}">${esc(t("connect"))}</button>` : `<span class="pill plain">${esc(t("clinic_updates"))}</span>`}</div>`; }).join("")}
       ${(p.devices || []).map((dv) => `<div class="li"><div class="iconwrap good">${icon("activity")}</div><div class="grow"><b>${esc(t("dev_" + dv))}</b><p class="xs muted">${esc(t("dev_mock"))}</p></div><span class="pill good">${esc(t("connected"))}</span></div>`).join("")}</div>
@@ -699,7 +708,7 @@ function profileView() {
     <section class="card stack"><div class="row between"><div><b>${esc(t("language"))}</b></div>${langSwitcher()}</div><div class="divider"></div>
       <div class="row between"><b>${esc(t("theme"))}</b><button class="btn sm secondary" data-act="theme">${icon("moon", "ico-sm")} ${esc(themeLabel())}</button></div><div class="divider"></div>
       <div class="row between"><div class="grow"><b>${esc(t("simple_mode"))}</b><p class="xs muted">${esc(t("simple_mode_d"))}</p></div><button class="switch ${me.simple ? "on" : ""}" data-act="toggle-simple" role="switch" aria-checked="${!!me.simple}" aria-label="${esc(t("simple_mode"))}"></button></div>
-      ${isCaregiver() ? "" : `<div class="divider"></div><div class="row between"><div class="grow"><b>${esc(t("dashboard_mode"))}</b><p class="xs muted">${esc(t("dashboard_mode_d"))}</p></div><div class="seg">${["general", "chronic"].map((m) => `<button class="${me.mode === m ? "on" : ""}" data-act="set-mode" data-v="${m}">${esc(t("mode_" + m))}</button>`).join("")}</div></div>`}</section>
+      ${isCaregiver() ? "" : `<div class="divider"></div><div class="row between"><div class="grow"><b>${esc(t("dashboard_mode"))}</b><p class="xs muted">${esc(t("dashboard_mode_d"))}</p></div><div class="seg">${["general", "chronic", "fitness"].map((m) => `<button class="${me.mode === m ? "on" : ""}" data-act="set-mode" data-v="${m}">${esc(t("mode_" + m))}</button>`).join("")}</div></div>`}</section>
     <section class="card list" style="padding:4px 16px">${links.map(([r, ic, k]) => `<button class="li" data-go="${r}" style="background:none;border-left:0;border-right:0;border-top:0;width:100%;text-align:start;color:inherit"><span class="iconwrap">${icon(ic)}</span><span class="grow">${esc(t(k))}</span>${flipIcon("chevron", "ico-sm")}</button>`).join("")}</section>
     <button class="btn secondary" data-act="logout">${icon("logout", "ico-sm")} ${esc(t("sign_out"))}</button>
   </div>`);
@@ -852,9 +861,115 @@ function clockSheet(items) {
     <button class="btn ghost" data-act="sheet-close">${esc(t("close"))}</button></div>`;
 }
 
+/* ---------- TRENDS with personal usual range ---------- */
+function trendCard(pid) {
+  const type = UI.trend || "bp";
+  const { pts, series, unit } = trendSeries(pid, type);
+  const hasBp = trendSeries(pid, "bp").pts.length > 1, hasGlu = trendSeries(pid, "glucose").pts.length > 1;
+  if (!hasBp && !hasGlu) return "";
+  const seg = `<div class="seg">${[["bp", hasBp], ["glucose", hasGlu]].filter(([, ok]) => ok).map(([k]) => `<button class="${type === k ? "on" : ""}" data-act="trend" data-v="${k}">${esc(t("m_" + k))}</button>`).join("")}</div>`;
+  if (pts.length < 2) return `<section class="card stack">${seg}${emptyState("chart", t("trend_few"), "")}</section>`;
+  const W = 340, H = 190, L = 36, R = 34, T = 14, B = 26;
+  const t0 = new Date(addDays(today(), -30) + "T00:00").getTime(), t1 = Date.now();
+  const all = series.flatMap((sr) => pts.map(sr.get));
+  const ranges = series.map((sr) => usualRange(pts.map(sr.get)));
+  let lo = Math.min(...all, ...ranges.filter(Boolean).flat()), hi = Math.max(...all, ...ranges.filter(Boolean).flat());
+  const step = type === "bp" ? 20 : 25; lo = Math.floor((lo - 5) / step) * step; hi = Math.ceil((hi + 5) / step) * step;
+  const x = (at) => L + ((new Date(at).getTime() - t0) / (t1 - t0)) * (W - L - R), y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+  const ticks = []; for (let v = lo; v <= hi; v += step) ticks.push(v);
+  const grid = ticks.map((v) => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" class="grid"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" class="axis">${fmtNum(v)}</text>`).join("");
+  const xt = [30, 20, 10, 0].map((d) => { const iso = addDays(today(), -d); return `<text x="${x(iso + "T12:00")}" y="${H - 6}" text-anchor="middle" class="axis">${esc(fmtDate(iso, { day: "numeric", month: "short" }))}</text>`; }).join("");
+  const bands = series.map((sr, i) => ranges[i] ? `<rect x="${L}" width="${W - L - R}" y="${y(ranges[i][1])}" height="${Math.max(2, y(ranges[i][0]) - y(ranges[i][1]))}" class="band ${sr.cls}"/>` : "").join("");
+  const lines = series.map((sr) => { const d = pts.map((m, j) => `${j ? "L" : "M"}${x(m.at).toFixed(1)},${y(sr.get(m)).toFixed(1)}`).join(""); return `<path d="${d}" class="line ${sr.cls}"/>` + pts.map((m) => `<circle cx="${x(m.at).toFixed(1)}" cy="${y(sr.get(m)).toFixed(1)}" r="4" class="dot ${sr.cls}"/>`).join(""); }).join("");
+  const lastPt = pts.at(-1);
+  const labels = series.map((sr) => `<text x="${x(lastPt.at) + 8}" y="${y(sr.get(lastPt)) + 4}" class="dlabel">${fmtNum(sr.get(lastPt))}</text>`).join("");
+  const data = pts.map((m) => ({ x: +x(m.at).toFixed(1), d: fmtDate(m.at.slice(0, 10), { weekday: "short", day: "numeric", month: "short" }), v: series.map((sr) => sr.get(m)), src: t("src_" + (m.source || "patient")) }));
+  const latestOut = series.map((sr, i) => ranges[i] && (sr.get(lastPt) > ranges[i][1] ? "above" : sr.get(lastPt) < ranges[i][0] ? "below" : "in")).filter(Boolean);
+  const verdict = latestOut.includes("above") ? "tr_above" : latestOut.includes("below") ? "tr_below" : ranges[0] ? "tr_in" : null;
+  return `<section class="card stack trend-card">
+    <div class="row between wrap"><h3>${esc(t("trends"))}</h3>${seg}</div>
+    ${series.length > 1 ? `<div class="legend">${series.map((sr) => `<span><i class="sw ${sr.cls}"></i>${esc(t("tr_" + sr.key))}</span>`).join("")}<span><i class="sw band-sw"></i>${esc(t("tr_usual"))}</span></div>` : `<div class="legend"><span><i class="sw band-sw"></i>${esc(t("tr_usual"))}</span></div>`}
+    <div class="trend" data-pts='${esc(JSON.stringify(data))}' data-names='${esc(JSON.stringify(series.map((sr) => t("tr_" + sr.key))))}' data-unit="${esc(unit)}">
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(t("trend_aria", { what: t("m_" + type) }))}">${grid}${xt}${bands}${lines}${labels}<line class="xhair" x1="0" x2="0" y1="${T}" y2="${H - B}" visibility="hidden"/></svg>
+      <div class="tip" hidden></div></div>
+    ${verdict ? `<p class="small"><span class="pill ${verdict === "tr_in" ? "good" : "warn"}">${esc(t(verdict + "_pill"))}</span> ${esc(t(verdict, { r: series.map((sr, i) => ranges[i] ? ranges[i].join("–") : "").filter(Boolean).join(" / ") + " " + unit }))}</p>` : ""}
+    ${whyBlock([{ k: "why_usual_range" }, { k: "why_usual_not_target" }], t("tr_how"))}
+    <details class="why"><summary>${icon("grid", "ico-sm")} ${esc(t("tr_table"))}</summary><div class="table-wrap" style="margin-top:8px"><table><thead><tr><th>${esc(t("date"))}</th>${series.map((sr) => `<th>${esc(t("tr_" + sr.key))}</th>`).join("")}<th>${esc(t("source"))}</th></tr></thead><tbody>${[...data].reverse().map((r) => `<tr><td>${esc(r.d)}</td>${r.v.map((v) => `<td class="num">${fmtNum(v)}</td>`).join("")}<td>${esc(r.src)}</td></tr>`).join("")}</tbody></table></div></details>
+  </section>`;
+}
+
+/* ---------- VISIT SUMMARY ---------- */
+function visitPackView() {
+  const a = DB.appointments.find((x) => x.id === UI.route.params.id); if (!a) return shell(emptyState("file", t("not_found")));
+  patientScope(a.patientId);
+  const v = visitPack(a); const c = CLINICS.find((x) => x.id === a.clinicId); const d = DOCTORS.find((x) => x.id === a.doctorId);
+  const consent = DB.profiles[a.patientId].consent?.shareWithClinics;
+  return shell(`${header(t("vp_title"), { back: true })}<div class="page stack-lg">
+    <div class="stack-sm"><span class="eyebrow">${esc(fmtDate(a.date, { weekday: "long", day: "numeric", month: "long" }))} · ${esc(fmtTime(a.time))}</span><h1>${esc(t("vp_title"))}</h1><p class="muted">${esc(doctorName(d))} · ${esc(clinicName(c))}</p></div>
+    <p class="small muted">${esc(t("vp_intro", { date: fmtDate(v.since) }))}</p>
+    <section class="card stack"><h3>${esc(t("my_meds"))}</h3><div class="list">${v.meds.map((m) => `<div class="li"><div class="grow"><b class="small">${esc(m.name)}</b> <span class="xs muted">${esc(m.dose || "")} · ${esc(t("freq_" + m.freq))}</span></div>${m.verified ? `<span class="pill good">${esc(t("clinic_verified"))}</span>` : `<span class="pill plain">${esc(t("self_entered"))}</span>`}</div>`).join("") || `<p class="small muted">${esc(t("no_meds"))}</p>`}</div>${v.adherence != null ? `<p class="small">${esc(t("vp_adherence", { v: v.adherence }))}</p>` : ""}</section>
+    ${v.readings.length ? `<section class="card stack"><h3>${esc(t("latest_measurements"))}</h3><dl class="kv">${v.readings.map((r) => `<dt>${esc(t("m_" + r.type))}</dt><dd class="num">${esc(r.latest)}${r.range ? ` <span class="xs muted">· ${esc(t("vp_usual", { r: r.range }))}</span>` : ""}</dd>`).join("")}</dl></section>` : ""}
+    <section class="card stack"><h3>${esc(t("vp_since"))}</h3><p class="small">${esc(t("vp_checkins", { n: v.checkins, w: v.worse }))}</p>${Object.keys(v.symptoms).length ? `<div class="chips">${Object.entries(v.symptoms).map(([k, n]) => `<span class="pill plain">${esc(t("sym_" + k))} ×${fmtNum(n)}</span>`).join("")}</div>` : ""}</section>
+    <section class="card stack"><h3>${esc(t("vp_questions"))}</h3>
+      <div class="list">${v.questions.map((q, i) => `<div class="li"><span class="grow small">${esc(q)}</span><button class="icon-btn" data-act="vp-q-del" data-i="${i}" aria-label="${esc(t("delete"))}">${icon("x", "ico-sm")}</button></div>`).join("")}</div>
+      <form class="rt-answer" data-form="vp-q"><input class="input" id="vp-q" name="q" placeholder="${esc(t("vp_q_ph"))}" autocomplete="off"><button class="btn" type="submit">${esc(t("add"))}</button></form>
+      <div class="chips">${["ai_q1", "ai_q_meds", "ai_q_last"].map((k) => `<button class="chip sm" data-act="vp-q-add" data-v="${esc(t(k))}">${esc(t(k))}</button>`).join("")}</div></section>
+    <div class="stack">
+      ${isCaregiver() ? "" : consent ? `<button class="btn xl block" data-act="vp-share" data-id="${a.id}">${icon("send", "ico-sm")} ${esc(t(a.pack ? "vp_reshare" : "vp_share"))}</button>${a.pack ? `<p class="small muted center">${esc(t("vp_shared_at", { when: relTime(a.pack.at) }))}</p>` : ""}` : `<div class="banner warn">${icon("lock")}<span class="small">${esc(t("vp_no_consent"))}</span></div>`}
+      <button class="btn secondary block" data-act="vp-copy" data-id="${a.id}">${icon("copy", "ico-sm")} ${esc(t("vp_copy"))}</button>
+    </div>
+    <p class="hint">${esc(t("vp_footer"))}</p>
+  </div>`, { tab: "appointments" });
+}
+
+/* ---------- FITNESS & PERFORMANCE ---------- */
+const WORKOUT_TYPES = ["run", "walk", "football", "gym", "swim", "cycle", "padel", "other"];
+function fitnessHomeCard(pid) {
+  const p = DB.profiles[pid]; const g = p.fitness?.goalMin || 150; const wk = fitnessWeek(pid); const rd = readiness(pid);
+  const pct = Math.min(100, Math.round((wk.min / g) * 100));
+  return `<button class="card tap stack" data-go="fitness"><div class="row between"><span class="eyebrow">${esc(t("fitness"))}</span><span class="pill ${rd.level === "ready" ? "good" : rd.level === "moderate" ? "info" : "warn"}">${esc(t("fit_" + rd.level))}</span></div>
+    <div class="row"><div class="ring" style="--p:${pct}"><span>${fmtNum(pct)}%</span></div><div class="grow"><h3>${esc(t("fit_min_of", { v: fmtNum(wk.min), g: fmtNum(g) }))}</h3><p class="small muted">${esc(t("fit_week_goal"))} · ${esc(t("fit_workouts_n", { n: fmtNum(wk.workouts.length) }))}</p></div>${flipIcon("chevron", "ico-sm")}</div></button>`;
+}
+function fitnessView() {
+  const pid = PID(); const p = DB.profiles[pid]; p.fitness ||= { goalMin: 150, goalSteps: 8000 };
+  const wk = fitnessWeek(pid); const rd = readiness(pid); const g = p.fitness.goalMin;
+  const last = (type, n = 7) => DB.measurements.filter((m) => m.patientId === pid && m.type === type).sort((a, b) => (a.at > b.at ? 1 : -1)).slice(-n);
+  const steps = last("steps"), rhr = last("rhr", 1)[0], sleep = last("sleep");
+  const avg = (a) => (a.length ? a.reduce((x, y) => x + y.value, 0) / a.length : null);
+  const maxMin = Math.max(60, ...wk.days.map((d) => d.min));
+  const recent = (DB.workouts || []).filter((w) => w.patientId === pid).sort((a, b) => (a.at < b.at ? 1 : -1)).slice(0, 6);
+  const pct = Math.min(100, Math.round((wk.min / g) * 100));
+  return shell(`${header(t("fitness"), { back: true })}<div class="page stack-lg">
+    <div class="stack-sm"><h1>${esc(t("fitness"))}</h1><p class="muted">${esc(t("fitness_sub"))}</p></div>
+    <section class="card stack"><div class="row"><div class="ring" style="--p:${pct};width:84px;height:84px"><span style="width:68px;height:68px;font-size:1rem">${fmtNum(pct)}%</span></div><div class="grow"><span class="eyebrow">${esc(t("fit_week_goal"))}</span><h2 class="num">${esc(t("fit_min_of", { v: fmtNum(wk.min), g: fmtNum(g) }))}</h2><p class="xs muted">${esc(t("fit_who_note"))}</p></div></div>
+      <div class="bar-chart" role="img" aria-label="${esc(t("fit_activity_week"))}">${wk.days.map((d) => `<div class="b" title="${esc(fmtDate(d.d, { weekday: "long" }))}: ${fmtNum(d.min)} ${esc(t("minutes_short"))}"><span class="num">${d.min && (d.d === today() || d.min === maxMin) ? fmtNum(d.min) : ""}</span><i style="height:${Math.max(3, Math.round((d.min / maxMin) * 80))}%;${d.min ? "" : "opacity:.25"}"></i><span>${esc(fmtDate(d.d, { weekday: "narrow" }))}</span></div>`).join("")}</div></section>
+    <section class="level-card ${rd.level === "recover" ? "amber" : ""} stack"><div class="row between"><span class="eyebrow">${esc(t("fit_readiness"))}</span><span class="pill plain">${esc(t("wellness_guidance"))}</span></div>
+      <h3>${esc(t("fit_" + rd.level))}</h3><p class="small muted">${esc(t("fit_" + rd.level + "_d"))}</p>${whyBlock(rd.reasons)}</section>
+    <div class="grid-2">
+      <div class="tile"><span class="xs faint">${esc(t("fit_steps_avg"))}</span><span class="big">${steps.length ? fmtNum(Math.round(avg(steps))) : "—"}</span><span class="xs faint">${esc(t("fit_goal_of", { g: fmtNum(p.fitness.goalSteps) }))} · ${esc(t("src_device"))}</span></div>
+      <div class="tile"><span class="xs faint">${esc(t("fit_rest_hr"))}</span><span class="big">${rhr ? fmtNum(rhr.value) : "—"} <span class="xs faint">${esc(t("bpm"))}</span></span><span class="xs faint">${rhr ? esc(relDays(rhr.at)) : esc(t("no_data"))}</span></div>
+      <div class="tile"><span class="xs faint">${esc(t("fit_sleep_avg"))}</span><span class="big">${sleep.length ? fmtNum(avg(sleep), { maximumFractionDigits: 1 }) : "—"} <span class="xs faint">${esc(t("hours_short"))}</span></span><span class="xs faint">${esc(t("per_week"))}</span></div>
+      <div class="tile"><span class="xs faint">${esc(t("fit_workouts"))}</span><span class="big">${fmtNum(wk.workouts.length)}</span><span class="xs faint">${esc(t("this_week"))}</span></div>
+    </div>
+    <button class="btn xl block" data-act="fit-log">${icon("plus", "ico-sm")} ${esc(t("fit_log"))}</button>
+    <section class="stack"><h3>${esc(t("fit_recent"))}</h3>${recent.length ? `<div class="card list-card">${recent.map((w) => `<div class="li"><div class="iconwrap">${icon("activity", "ico-sm")}</div><div class="grow"><b class="small">${esc(t("wt_" + w.type))}</b><p class="xs muted">${esc(fmtDate(w.at.slice(0, 10)))} · ${fmtNum(w.min)} ${esc(t("minutes_short"))} · RPE ${fmtNum(w.rpe)}/10</p></div></div>`).join("")}</div>` : emptyState("activity", t("fit_none"), t("fit_none_d"))}</section>
+    <details class="card fold" id="fold-fitgoals"><summary><span class="iconwrap">${icon("settings", "ico-sm")}</span><h4 class="grow">${esc(t("fit_goals"))}</h4>${icon("chevron", "ico-sm fold-ico")}</summary><form class="stack fold-body" data-form="fit-goals">
+      <div class="grid-2">${field("fg-min", t("fit_goal_min"), `<input class="input" id="fg-min" name="min" type="number" min="30" max="1500" value="${g}">`)}${field("fg-steps", t("fit_goal_steps"), `<input class="input" id="fg-steps" name="steps" type="number" min="1000" max="40000" step="500" value="${p.fitness.goalSteps}">`)}</div>
+      <div><button class="btn sm" type="submit">${esc(t("save"))}</button></div></form></details>
+  </div>`, { tab: "health" });
+}
+function workoutSheet() {
+  const w = UI.wk ??= { type: "run", min: 30, rpe: 6 };
+  return `<form class="stack" data-form="workout"><h3>${esc(t("fit_log_title"))}</h3>
+    <span class="label">${esc(t("fit_type"))}</span><div class="chips">${WORKOUT_TYPES.map((k) => `<button type="button" class="chip sm ${w.type === k ? "on" : ""}" data-act="wk-type" data-v="${k}">${esc(t("wt_" + k))}</button>`).join("")}</div>
+    ${field("wk-min", t("fit_duration"), `<input class="input" id="wk-min" name="min" type="number" min="5" max="600" value="${w.min}" inputmode="numeric">`)}
+    ${field("wk-rpe", t("fit_intensity"), `<div class="row"><input type="range" id="wk-rpe" name="rpe" min="1" max="10" value="${w.rpe}" class="grow"><b class="num" id="wk-rpe-v">${w.rpe}/10</b></div>`, t("fit_rpe_hint"))}
+    <button class="btn block" type="submit">${esc(t("save"))}</button></form>`;
+}
+
 const PATIENT_VIEWS = {
   home: homeView, discover: discoverView, clinic: clinicProfileView, book: bookView, "appt-done": apptDoneView, appointments: appointmentsView,
-  meds: medsView, "med-edit": medEditView, routine: routineView, health: healthView, measure: measureView, checkin: checkinView, summary: summaryView, timeline: timelineView,
+  meds: medsView, "med-edit": medEditView, routine: routineView, "visit-pack": visitPackView, fitness: fitnessView, health: healthView, measure: measureView, checkin: checkinView, summary: summaryView, timeline: timelineView,
   journal: journalView, documents: documentsView, ai: aiView, notifications: notificationsView, profile: profileView, "profile-edit": profileEditView,
   caregiver: caregiverView, settings: settingsView, plus: plusView, emails: emailsView, platform: () => platformView()
 };

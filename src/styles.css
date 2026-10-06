@@ -13,6 +13,8 @@
   --accent: #3C619B;
   --accent-ink: #FFFFFF;
   --accent-soft: #E5ECF7;
+  --s1: #2F5FB0;
+  --s2: #B0457F;
   --good: #3B8466;
   --good-soft: #E3F1EA;
   --warn: #A96F14;
@@ -40,7 +42,7 @@
   :root:not([data-theme="light"]) {
     --bg: #0B1018; --bg-2: #0F1520; --surface: #131A26; --surface-2: #1A2332;
     --ink: #E7ECF4; --ink-2: #A8B2C4; --ink-3: #737E93; --line: #232D3E;
-    --accent: #86A7DB; --accent-ink: #0B1018; --accent-soft: #1B2940;
+    --accent: #86A7DB; --accent-ink: #0B1018; --accent-soft: #1B2940; --s1: #5B86D6; --s2: #D0629F;
     --good: #6CBB96; --good-soft: #13281F; --warn: #E3AA52; --warn-soft: #2C2213;
     --bad: #E57E73; --bad-soft: #321819;
     --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
@@ -52,7 +54,7 @@
 :root[data-theme="dark"] {
   --bg: #0B1018; --bg-2: #0F1520; --surface: #131A26; --surface-2: #1A2332;
   --ink: #E7ECF4; --ink-2: #A8B2C4; --ink-3: #737E93; --line: #232D3E;
-  --accent: #86A7DB; --accent-ink: #0B1018; --accent-soft: #1B2940;
+  --accent: #86A7DB; --accent-ink: #0B1018; --accent-soft: #1B2940; --s1: #5B86D6; --s2: #D0629F;
   --good: #6CBB96; --good-soft: #13281F; --warn: #E3AA52; --warn-soft: #2C2213;
   --bad: #E57E73; --bad-soft: #321819;
   --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
@@ -462,3 +464,21 @@ html { scroll-padding-top: 76px; }
 @keyframes bell-shake { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(14deg); } 30% { transform: rotate(-12deg); } 45% { transform: rotate(8deg); } 60% { transform: rotate(-5deg); } 75% { transform: rotate(2deg); } }
 .alarm-bell .ico { animation: bell-shake 1.3s var(--ease) infinite; transform-origin: 50% 10%; }
 @media (prefers-reduced-motion: reduce) { .ringing, .alarm-bell .ico { animation: none; } }
+
+/* ---------- trend chart ---------- */
+.trend { position: relative; touch-action: pan-y; }
+.trend svg { width: 100%; height: auto; display: block; overflow: visible; direction: ltr; }
+.trend .grid { stroke: var(--line); stroke-width: 1; }
+.trend .axis { fill: var(--ink-3); font-size: 10px; font-family: var(--font-body); }
+.trend .line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.trend .line.s1, .trend .dot.s1 { stroke: var(--s1); } .trend .line.s2, .trend .dot.s2 { stroke: var(--s2); }
+.trend .dot { fill: var(--s1); stroke: var(--surface) !important; stroke-width: 2; } .trend .dot.s1 { fill: var(--s1); } .trend .dot.s2 { fill: var(--s2); }
+.trend .band { opacity: .13; } .trend .band.s1 { fill: var(--s1); } .trend .band.s2 { fill: var(--s2); }
+.trend .dlabel { fill: var(--ink-2); font-size: 10.5px; font-weight: 650; font-family: var(--font-body); }
+.trend .xhair { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 3 3; }
+.trend .tip { position: absolute; top: -6px; transform: translateY(-100%); display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-lift); font-size: 12px; white-space: nowrap; pointer-events: none; z-index: 3; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: var(--fs-xs); color: var(--ink-2); font-weight: 600; }
+.legend span, .trend .tip span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; background: var(--s1); } .sw.s2 { background: var(--s2); }
+.sw.band-sw { background: color-mix(in srgb, var(--s1) 18%, transparent); border: 1px dashed var(--s1); }
+.vp-pre { white-space: pre-wrap; font-family: var(--font-body); font-size: 12.5px; line-height: 1.55; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; max-height: 40vh; overflow: auto; }
